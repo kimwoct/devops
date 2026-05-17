@@ -23,6 +23,38 @@ This guide is tuned for this Mac's current disk pressure: about 29 GiB free on `
 | Ingress | localhost and `kubectl port-forward`. | Real LoadBalancers and DNS. |
 | Best use | Developing logic, dashboards, exporters, and CLI workflows. | Testing scale, reliability, storage behavior, and managed ingress. |
 
+## Quick Start
+
+Use this path when the tools are already installed and you just want the weather stack running through Kubernetes and Nginx.
+
+```sh
+cd /Users/kingwong/Downloads/devops
+df -h /
+orb start
+./scripts/start-weather-service.sh
+curl -i http://127.0.0.1:5035/weather/local
+kubectl --context kind-devops-lite get pods
+```
+
+If Aspire already owns port `5035`, the script falls back to `5037`:
+
+```sh
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+Stop the weather app without deleting Redis, Redpanda, or monitoring:
+
+```sh
+./scripts/stop-weather-service.sh
+```
+
+Recover disk by deleting the whole local cluster:
+
+```sh
+kind delete cluster --name devops-lite
+docker system prune -af --volumes
+```
+
 ## 0. Disk Guardrails
 
 Run these checks before installing anything.
@@ -513,6 +545,27 @@ The default path is:
 browser/curl -> 127.0.0.1:5035 -> kubectl port-forward -> svc/weather-nginx -> svc/weather-live-stream
 ```
 
+### Port Reference
+
+| Port | Owner | Purpose | How to use |
+| --- | --- | --- | --- |
+| `5035` | Kubernetes Nginx port-forward | Main weather dashboard and API | `curl http://127.0.0.1:5035/weather/local` |
+| `5037` | Kubernetes Nginx fallback | Used when Aspire DCP owns `5035` | `curl http://127.0.0.1:5037/weather/local` |
+| `5036` | Direct app debug port-forward | Bypass Nginx for app debugging | `kubectl port-forward svc/weather-live-stream 5036:80` |
+| `5038` | Direct local app profile | Local app run path used outside kind | Used by local launch/Aspire flows |
+| `5050` | BusyBox smoke pod | Smallest Linux pod demo | `./scripts/smoke-linux.sh` |
+| `3000` | Grafana port-forward | Metrics dashboard UI | `kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80` |
+| `9090` | Prometheus port-forward | Prometheus query UI/API | `kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090` |
+| `8080` | Argo CD port-forward | Argo CD UI/API | `kubectl -n argocd port-forward svc/argocd-server 8080:443` |
+| public HTTPS | ngrok | Temporary public demo URL | `NGROK_LOCAL_URL=http://127.0.0.1:5035 ./scripts/start-ngrok-demo.sh` |
+
+Check who owns a local port:
+
+```sh
+lsof -nP -iTCP:5035 -sTCP:LISTEN || true
+lsof -nP -iTCP:5037 -sTCP:LISTEN || true
+```
+
 Check the dashboard and API through Nginx:
 
 ```sh
@@ -807,6 +860,61 @@ $EDITOR .env.local
 kubectl -n argocd port-forward svc/argocd-server 8080:443
 ```
 
+### Verify Argo CD Delivery
+
+Use these checks to prove CD is working after GitHub Actions publishes an image and the GitOps files are pushed.
+
+Check the Argo CD application:
+
+```sh
+kubectl --context kind-devops-lite get application weather-live-stream -n argocd -o wide
+```
+
+Expected result:
+
+```text
+SYNC STATUS: Synced
+HEALTH STATUS: Healthy
+```
+
+Check what image Kubernetes is running:
+
+```sh
+kubectl --context kind-devops-lite get deploy weather-live-stream \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+Check the rollout and API:
+
+```sh
+kubectl --context kind-devops-lite rollout status deployment/weather-live-stream --timeout=5m
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+If Aspire owns `5035`, use:
+
+```sh
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+Practical CD test:
+
+1. Change the image tag or a harmless label in `gitops/weather-live-stream/weather-app.yaml`.
+2. Commit and push the GitOps change.
+3. Watch Argo CD detect and sync it:
+
+```sh
+kubectl --context kind-devops-lite get application weather-live-stream -n argocd -w
+```
+
+4. Confirm Kubernetes returned to the Git state:
+
+```sh
+kubectl --context kind-devops-lite get deploy weather-live-stream -o yaml | grep -E 'image:|app:|release:'
+```
+
+This proves the intended split: GitHub Actions builds the image, Git stores the desired Kubernetes state, and Argo CD pulls that state into the cluster.
+
 ### Current Repo Paths
 
 - GitHub Actions workflow: `.github/workflows/ci.yml`
@@ -850,7 +958,28 @@ infra/
 
 Do not commit Terraform state or real variable files. This repo ignores `.terraform/`, `*.tfstate`, and `*.tfvars`; commit only examples such as `terraform.tfvars.example`.
 
-## 14. Smallest Linux Pod Example
+## 14. Security Checklist
+
+Run this before sharing the repo, opening a public ngrok demo, or committing infrastructure changes.
+
+```sh
+git status --short
+find . -maxdepth 2 -name '.env*' -print
+TOKEN_SCAN='ngrok config add-authtoken [A-Za-z0-9_\-]+|[A-Za-z0-9]{20,}'\
+'_[A-Za-z0-9]{20,}'
+rg -n --hidden --glob '!/.git/**' --glob '!**/bin/**' --glob '!**/obj/**' "$TOKEN_SCAN" .
+```
+
+Rules:
+
+- Commit `.env.example`, never `.env.local`.
+- Commit `terraform.tfvars.example`, never real `*.tfvars`.
+- Never commit `.terraform/`, `*.tfstate`, or `*.tfstate.*`.
+- Keep ngrok tokens and demo passwords in `.env.local`.
+- If an ngrok token leaks, revoke or rotate it in the ngrok dashboard, update `.env.local`, then run `./scripts/configure-ngrok.sh`.
+- Do not expose Prometheus, Grafana, Argo CD, Redis, Redpanda, Kubernetes API, or OpenTelemetry collector ports through ngrok for a casual demo.
+
+## 15. Smallest Linux Pod Example
 
 If you want the smallest practical Linux container in this stack, use the BusyBox smoke pod:
 

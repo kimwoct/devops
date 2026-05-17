@@ -2,6 +2,47 @@
 
 This project uses OrbStack as the local Docker engine and kind as the Kubernetes cluster for the weather stack.
 
+## Quick Start Path
+
+This is the shortest path through the architecture when you want to prove the local Kubernetes stack works.
+
+```text
+1. Start OrbStack
+2. Start weather stack script
+3. Script builds Docker image and loads it into kind
+4. Kubernetes runs weather-live-stream and weather-nginx
+5. kubectl port-forward exposes Nginx on localhost
+6. curl/browser hits the weather API through Nginx
+```
+
+Commands:
+
+```sh
+cd /Users/kingwong/Downloads/devops
+orb start
+./scripts/start-weather-service.sh
+curl -i http://127.0.0.1:5035/weather/local
+kubectl --context kind-devops-lite get pods
+```
+
+If Aspire owns `5035`, use the fallback:
+
+```sh
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+Stop only the app path:
+
+```sh
+./scripts/stop-weather-service.sh
+```
+
+Delete the whole local Kubernetes cluster when disk is tight:
+
+```sh
+kind delete cluster --name devops-lite
+```
+
 ## OrbStack Usage Reminder
 
 - Use OrbStack as the local Docker backend for containers and kind nodes.
@@ -317,6 +358,38 @@ Kubernetes path
 - Use Aspire when you want local service orchestration, dashboard, logs, metrics, traces, and quick app iteration.
 - Use kind when you want to validate the container image, Kubernetes YAML, probes, Services, Nginx proxy, OpenTelemetry Collector, Prometheus, and Argo CD GitOps path.
 - Do not expect the OrbStack Kubernetes UI to show kind workloads; use `kubectl --context kind-devops-lite`.
+
+### Port Reference
+
+Use this table when a browser works but the terminal does not, or when a port is already in use.
+
+| Port | Runtime owner | Purpose | Notes |
+| --- | --- | --- | --- |
+| `5035` | kind via `kubectl port-forward` | Main weather Nginx URL | Normal `./scripts/start-weather-service.sh` target |
+| `5037` | kind via `kubectl port-forward` | Weather Nginx fallback URL | Used when Aspire DCP already owns `5035` |
+| `5036` | kind via temporary port-forward | Direct app debug URL | Bypasses Nginx, useful for app-only debugging |
+| `5038` | local app/Aspire profile | Direct local app URL | Not the Kubernetes path |
+| `5050` | kind BusyBox smoke pod | Small Linux pod demo | Started by `./scripts/smoke-linux.sh` |
+| `3000` | kind Grafana port-forward | Grafana dashboard | Do not expose through ngrok for casual demos |
+| `9090` | kind Prometheus port-forward | Prometheus UI/API | Do not expose through ngrok for casual demos |
+| `8080` | kind Argo CD port-forward | Argo CD UI/API | Admin tool; keep local |
+| public HTTPS | ngrok agent | Temporary external demo | Should forward only to `5035` or `5037` |
+
+Port ownership checks:
+
+```sh
+lsof -nP -iTCP:5035 -sTCP:LISTEN || true
+lsof -nP -iTCP:5037 -sTCP:LISTEN || true
+lsof -nP -iTCP:3000 -sTCP:LISTEN || true
+lsof -nP -iTCP:9090 -sTCP:LISTEN || true
+```
+
+Practical rule:
+
+- If the app should be tested as Kubernetes traffic, use `5035` or `5037`.
+- If you are debugging only the app service, use `5036`.
+- If you are using Aspire, use the URL printed by `./scripts/run-aspire.sh`.
+- If you are sharing publicly, use ngrok only in front of `5035` or `5037`.
 
 ### Dashboard And Error Trace Runbook
 
@@ -947,6 +1020,72 @@ Argo CD
   better fit for Kubernetes GitOps
 ```
 
+### Verify The Argo CD Pipeline
+
+Use this when you want to prove the CD part is really working, not just that the app happens to run locally.
+
+```text
+Git commit
+  |
+  v
+GitHub Actions
+  - build/test
+  - publish GHCR image
+  |
+  v
+GitOps manifest update
+  |
+  v
+Argo CD detects Git change
+  |
+  v
+Kubernetes deployment changes
+  |
+  v
+curl verifies app behavior
+```
+
+Check Argo CD application state:
+
+```sh
+kubectl --context kind-devops-lite get application weather-live-stream -n argocd -o wide
+```
+
+Healthy output should show:
+
+```text
+Synced
+Healthy
+```
+
+Check the live image in Kubernetes:
+
+```sh
+kubectl --context kind-devops-lite get deploy weather-live-stream \
+  -o jsonpath='{.spec.template.spec.containers[0].image}{"\n"}'
+```
+
+Watch Argo CD reconcile after a GitOps change:
+
+```sh
+kubectl --context kind-devops-lite get application weather-live-stream -n argocd -w
+```
+
+Smoke test after sync:
+
+```sh
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+Use `5037` if Aspire owns `5035`.
+
+Failure checks:
+
+- If Argo CD is `OutOfSync`, compare Git and cluster state in the Argo CD UI or CLI.
+- If Argo CD is `Synced` but the pod is not ready, inspect `kubectl describe pod` and `kubectl logs`.
+- If the pod is ready but `curl` fails, check the Nginx service, port-forward, and local port ownership.
+- If the image pull fails, confirm the GHCR image exists and is public or that pull credentials are configured.
+
 ## Step 2 - Check Which Kubernetes Cluster You Are Viewing
 
 ```sh
@@ -1009,6 +1148,27 @@ Delete the whole kind cluster when disk is tight:
 ```sh
 kind delete cluster --name devops-lite
 ```
+
+## Step 5 - Security Checklist
+
+Run this before pushing docs, showing screenshots, starting a public demo, or adding Terraform files.
+
+```sh
+git status --short
+find . -maxdepth 2 -name '.env*' -print
+TOKEN_SCAN='ngrok config add-authtoken [A-Za-z0-9_\-]+|[A-Za-z0-9]{20,}'\
+'_[A-Za-z0-9]{20,}'
+rg -n --hidden --glob '!/.git/**' --glob '!**/bin/**' --glob '!**/obj/**' "$TOKEN_SCAN" .
+```
+
+What should be true:
+
+- `.env.example` may be committed.
+- `.env.local` must stay local and ignored.
+- Real cloud provider tokens must stay in GitHub Actions secrets or local ignored env files.
+- Real `*.tfvars`, `*.tfstate`, and `.terraform/` must not be committed.
+- ngrok should expose only the weather Nginx local port, not admin tools.
+- If a token appears in chat, shell history, markdown, or a screenshot, rotate it before using it again.
 
 ## User Manual Notes
 
