@@ -493,9 +493,7 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 If you want the smallest practical Linux container in this stack, use the BusyBox smoke pod:
 
 ```sh
-kubectl apply -f k8s/linux-smoke.yaml
-kubectl rollout status deployment/linux-smoke --timeout=2m
-kubectl port-forward svc/linux-smoke 5050:80
+./scripts/smoke-linux.sh
 curl http://127.0.0.1:5050/
 ```
 
@@ -509,6 +507,7 @@ That pod is intentionally tiny:
 Remove it when done:
 
 ```sh
+screen -S linux-smoke-port-forward -X quit >/dev/null 2>&1 || true
 kubectl delete -f k8s/linux-smoke.yaml
 ```
 
