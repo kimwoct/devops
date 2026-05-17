@@ -1,0 +1,67 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Local weather";
+}
+
+<div class="weather-hero">
+    <p class="text-uppercase text-muted mb-2">WeatherLiveStream</p>
+    <h1 class="display-5">Local weather for @Model.Weather.Location</h1>
+    <p class="lead mb-0">@Model.Weather.Summary with @Model.Weather.TemperatureC&deg;C / @Model.Weather.TemperatureF&deg;F</p>
+</div>
+
+<div class="row g-3 mt-4">
+    <div class="col-md-3">
+        <div class="weather-card">
+            <span>Humidity</span>
+            <strong>@Model.Weather.HumidityPercent%</strong>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="weather-card">
+            <span>Wind</span>
+            <strong>@Model.Weather.WindKph km/h</strong>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="weather-card">
+            <span>Observed</span>
+            <strong>@Model.Weather.ObservedAt.ToString("HH:mm")</strong>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="weather-card">
+            <span>Source</span>
+            <strong>@Model.Weather.Source</strong>
+        </div>
+    </div>
+</div>
+
+<section class="mt-4">
+    <div class="d-flex align-items-center justify-content-between">
+        <h2 class="h4 mb-3">5-day local forecast</h2>
+        <a href="/weather/local">View JSON</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Summary</th>
+                    <th>Temperature</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var forecast in Model.Weather.Forecast)
+                {
+                    <tr>
+                        <td>@forecast.Date.ToString("ddd, MMM d")</td>
+                        <td>@forecast.Summary</td>
+                        <td>@forecast.TemperatureC&deg;C / @forecast.TemperatureF&deg;F</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

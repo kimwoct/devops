@@ -1,0 +1,23 @@
+statefulset:
+  replicas: 1
+resources:
+  cpu:
+    cores: 1
+  memory:
+    container:
+      max: 1536Mi
+    redpanda:
+      memory: 1100Mi
+      reserveMemory: 0Mi
+storage:
+  persistentVolume:
+    enabled: false
+console:
+  enabled: false
+auth:
+  sasl:
+    enabled: false
+tls:
+  enabled: false
+external:
+  enabled: false

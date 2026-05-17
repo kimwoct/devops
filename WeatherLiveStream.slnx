@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/WeatherLiveStream.App/WeatherLiveStream.App.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WeatherLiveStream.Tests/WeatherLiveStream.Tests.csproj" />
+  </Folder>
+  <Project Path="WeatherLiveStream.AppHost/WeatherLiveStream.AppHost.csproj" />
+</Solution>

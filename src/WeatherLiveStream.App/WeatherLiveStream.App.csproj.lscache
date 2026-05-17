@@ -1,0 +1,119 @@
+version=1
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=WeatherLiveStream.App
+CommandLineArgsForDesignTimeEvaluation=-langversion: -define:TRACE
+CompilerGeneratedFilesOutputPath=
+MaxSupportedLangVersion=
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=WeatherLiveStream.App
+RunAnalyzers=
+RunAnalyzersDuringLiveAnalysis=
+SolutionPath=*Undefined*
+TargetFrameworkIdentifier=.NETCoreApp
+TargetPath=<PATH>bin/Debug/net10.0/WeatherLiveStream.App.dll
+TargetRefPath=<PATH>obj/Debug/net10.0/ref/WeatherLiveStream.App.dll
+TemporaryDependencyNodeTargetIdentifier=net10.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:1
+/define:TRACE;DEBUG;NET;NET10_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net10.0/WeatherLiveStream.App.dll
+/refout:obj/Debug/net10.0/refint/WeatherLiveStream.App.dll
+/target:exe
+/warnaserror-
+/utf8output
+/deterministic+
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+LocalWeatherService.cs
+obj/Debug/net10.0/
+ .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+ WeatherLiveStream.App.AssemblyInfo.cs
+ WeatherLiveStream.App.GlobalUsings.g.cs
+ WeatherLiveStream.App.RazorAssemblyInfo.cs
+Pages/
+ Error.cshtml.cs
+ Index.cshtml.cs
+ Privacy.cshtml.cs
+Program.cs
+
+[metadataReferences]
+<NUGET>/
+ confluent.kafka/2.14.0/lib/net8.0/Confluent.Kafka.dll
+ opentelemetry.api.providerbuilderextensions/1.15.3/lib/net10.0/OpenTelemetry.Api.ProviderBuilderExtensions.dll
+ opentelemetry.api/1.15.3/lib/net10.0/OpenTelemetry.Api.dll
+ opentelemetry.exporter.prometheus.aspnetcore/1.15.3-beta.1/lib/net10.0/OpenTelemetry.Exporter.Prometheus.AspNetCore.dll
+ opentelemetry.extensions.hosting/1.15.3/lib/net10.0/OpenTelemetry.Extensions.Hosting.dll
+ opentelemetry.instrumentation.aspnetcore/1.15.2/lib/net10.0/OpenTelemetry.Instrumentation.AspNetCore.dll
+ opentelemetry.instrumentation.http/1.15.1/lib/net10.0/OpenTelemetry.Instrumentation.Http.dll
+ opentelemetry.instrumentation.runtime/1.15.1/lib/net10.0/OpenTelemetry.Instrumentation.Runtime.dll
+ opentelemetry/1.15.3/lib/net10.0/OpenTelemetry.dll
+ pipelines.sockets.unofficial/2.2.16/lib/net9.0/Pipelines.Sockets.Unofficial.dll
+ stackexchange.redis/2.13.1/lib/net10.0/StackExchange.Redis.dll
+ system.io.hashing/10.0.2/lib/net10.0/System.IO.Hashing.dll
+
+[analyzerReferences]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
+ Microsoft.AspNetCore.Razor.Utilities.Shared.dll
+ Microsoft.CodeAnalysis.Razor.Compiler.dll
+ Microsoft.Extensions.ObjectPool.dll
+ System.Collections.Immutable.dll
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs/
+ Microsoft.AspNetCore.Analyzers.dll
+ Microsoft.AspNetCore.Mvc.Analyzers.dll
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+
+[analyzerConfigFiles]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/codestyle/cs/build/config/analysislevelstyle_default.globalconfig
+obj/Debug/net10.0/WeatherLiveStream.App.GeneratedMSBuildEditorConfig.editorconfig
+
+[additionalFiles]
+Pages/
+ Error.cshtml
+ Index.cshtml
+ Privacy.cshtml
+ Shared/
+  _Layout.cshtml
+  _ValidationScriptsPartial.cshtml
+ _ViewImports.cshtml
+ _ViewStart.cshtml
+
+[dynamicFiles]
+Pages/
+ Error.cshtml
+ Index.cshtml
+ Privacy.cshtml
+ Shared/
+  _Layout.cshtml
+  _ValidationScriptsPartial.cshtml
+ _ViewImports.cshtml
+ _ViewStart.cshtml

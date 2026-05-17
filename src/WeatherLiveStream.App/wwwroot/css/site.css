@@ -1,0 +1,57 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+.weather-hero {
+  background: linear-gradient(135deg, #e0f2fe, #f8fafc);
+  border: 1px solid #bae6fd;
+  border-radius: 1rem;
+  padding: 2rem;
+}
+
+.weather-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  min-height: 110px;
+}
+
+.weather-card span {
+  color: #6b7280;
+  display: block;
+  font-size: 0.875rem;
+}
+
+.weather-card strong {
+  display: block;
+  font-size: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}

@@ -1,0 +1,92 @@
+version=1
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=WeatherLiveStream.Tests
+CommandLineArgsForDesignTimeEvaluation=-langversion: -define:TRACE
+CompilerGeneratedFilesOutputPath=
+MaxSupportedLangVersion=
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=WeatherLiveStream.Tests
+RunAnalyzers=
+RunAnalyzersDuringLiveAnalysis=
+SolutionPath=*Undefined*
+TargetFrameworkIdentifier=.NETCoreApp
+TargetPath=<PATH>bin/Debug/net10.0/WeatherLiveStream.Tests.dll
+TargetRefPath=<PATH>obj/Debug/net10.0/ref/WeatherLiveStream.Tests.dll
+TemporaryDependencyNodeTargetIdentifier=net10.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:1
+/define:TRACE;DEBUG;NET;NET10_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net10.0/WeatherLiveStream.Tests.dll
+/refout:obj/Debug/net10.0/refint/WeatherLiveStream.Tests.dll
+/target:exe
+/warnaserror-
+/utf8output
+/deterministic+
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+<NUGET>/microsoft.net.test.sdk/17.14.1/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
+ @folderNames=..,..,..,..,.nuget,packages,microsoft.net.test.sdk,17.14.1,build,net8.0
+obj/Debug/net10.0/
+ .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+ WeatherLiveStream.Tests.AssemblyInfo.cs
+ WeatherLiveStream.Tests.GlobalUsings.g.cs
+UnitTest1.cs
+
+[metadataReferences]
+../../src/WeatherLiveStream.App/obj/Debug/net10.0/ref/WeatherLiveStream.App.dll
+<NUGET>/
+ microsoft.codecoverage/17.14.1/lib/net8.0/Microsoft.VisualStudio.CodeCoverage.Shim.dll
+ microsoft.testplatform.testhost/17.14.1/lib/net8.0/
+  Microsoft.TestPlatform.CommunicationUtilities.dll
+  Microsoft.TestPlatform.CoreUtilities.dll
+  Microsoft.TestPlatform.CrossPlatEngine.dll
+  Microsoft.TestPlatform.PlatformAbstractions.dll
+  Microsoft.TestPlatform.Utilities.dll
+  Microsoft.VisualStudio.TestPlatform.Common.dll
+  Microsoft.VisualStudio.TestPlatform.ObjectModel.dll
+  testhost.dll
+ newtonsoft.json/13.0.3/lib/net6.0/Newtonsoft.Json.dll
+ xunit.abstractions/2.0.3/lib/netstandard2.0/xunit.abstractions.dll
+ xunit.assert/2.9.3/lib/net6.0/xunit.assert.dll
+ xunit.extensibility.core/2.9.3/lib/netstandard1.1/xunit.core.dll
+ xunit.extensibility.execution/2.9.3/lib/netstandard1.1/xunit.execution.dotnet.dll
+
+[analyzerReferences]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/xunit.analyzers/1.18.0/analyzers/dotnet/cs/
+ xunit.analyzers.dll
+ xunit.analyzers.fixes.dll
+
+[analyzerConfigFiles]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/codestyle/cs/build/config/analysislevelstyle_default.globalconfig
+obj/Debug/net10.0/WeatherLiveStream.Tests.GeneratedMSBuildEditorConfig.editorconfig

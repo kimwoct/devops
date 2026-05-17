@@ -1,0 +1,16 @@
+alertmanager:
+  enabled: false
+grafana:
+  enabled: true
+  persistence:
+    enabled: false
+  adminPassword: admin
+prometheus:
+  prometheusSpec:
+    retention: 2h
+    retentionSize: 512MB
+    storageSpec: {}
+nodeExporter:
+  enabled: false
+kube-state-metrics:
+  enabled: true

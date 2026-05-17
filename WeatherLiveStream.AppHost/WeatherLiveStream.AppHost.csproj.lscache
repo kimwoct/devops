@@ -1,0 +1,141 @@
+version=1
+
+# This file caches language service data to improve the performance of C# Dev Kit.
+# It is not intended for manual editing. It can safely be deleted and will be
+# regenerated automatically. For more information, see https://aka.ms/lscache
+#
+# To control where cache files are stored, use the following VS Code setting:
+#   "dotnet.projectsystem.cacheInProjectFolder": true
+
+[project]
+language=C#
+primary
+lastDtbSucceeded
+
+[properties]
+AssemblyName=WeatherLiveStream.AppHost
+CommandLineArgsForDesignTimeEvaluation=-langversion: -define:TRACE
+CompilerGeneratedFilesOutputPath=
+MaxSupportedLangVersion=
+ProjectAssetsFile=<PATH>obj/project.assets.json
+RootNamespace=WeatherLiveStream.AppHost
+RunAnalyzers=
+RunAnalyzersDuringLiveAnalysis=
+SolutionPath=*Undefined*
+TargetFrameworkIdentifier=.NETCoreApp
+TargetPath=<PATH>bin/Debug/net10.0/WeatherLiveStream.AppHost.dll
+TargetRefPath=<PATH>obj/Debug/net10.0/ref/WeatherLiveStream.AppHost.dll
+TemporaryDependencyNodeTargetIdentifier=net10.0
+
+[commandLineArguments]
+/noconfig
+/unsafe-
+/checked-
+/nowarn:1701,1702,1701,1702
+/fullpaths
+/nostdlib+
+/errorreport:prompt
+/warn:1
+/define:TRACE;DEBUG;NET;NET10_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
+/highentropyva+
+/nullable:enable
+/debug+
+/debug:portable
+/filealign:512
+/optimize-
+/out:obj/Debug/net10.0/WeatherLiveStream.AppHost.dll
+/refout:obj/Debug/net10.0/refint/WeatherLiveStream.AppHost.dll
+/target:exe
+/warnaserror-
+/utf8output
+/deterministic+
+/warnaserror+:NU1605,SYSLIB0011
+
+[sourceFiles]
+AppHost.cs
+obj/Debug/net10.0/
+ .NETCoreApp,Version=v10.0.AssemblyAttributes.cs
+ Aspire/references/
+  WeatherLiveStream_App.ProjectMetadata.g.cs
+  _AppHost.ProjectMetadata.g.cs
+ WeatherLiveStream.AppHost.AssemblyInfo.cs
+ WeatherLiveStream.AppHost.GlobalUsings.g.cs
+
+[metadataReferences]
+<NUGET>/
+ aspire.hosting.apphost/13.3.2/lib/net10.0/Aspire.Hosting.AppHost.dll
+ aspire.hosting/13.3.2/lib/net8.0/Aspire.Hosting.dll
+ aspnetcore.healthchecks.uris/9.0.0/lib/net8.0/HealthChecks.Uris.dll
+ fractions/7.3.0/lib/netstandard2.1/Fractions.dll
+ google.protobuf/3.33.5/lib/net5.0/Google.Protobuf.dll
+ grpc.aspnetcore.server.clientfactory/2.76.0/lib/net10.0/Grpc.AspNetCore.Server.ClientFactory.dll
+ grpc.aspnetcore.server/2.76.0/lib/net10.0/Grpc.AspNetCore.Server.dll
+ grpc.core.api/2.76.0/lib/netstandard2.1/Grpc.Core.Api.dll
+ grpc.net.client/2.76.0/lib/net10.0/Grpc.Net.Client.dll
+ grpc.net.clientfactory/2.76.0/lib/net10.0/Grpc.Net.ClientFactory.dll
+ grpc.net.common/2.76.0/lib/net10.0/Grpc.Net.Common.dll
+ humanizer.core/2.14.1/lib/net6.0/Humanizer.dll
+ json.more.net/2.1.0/lib/net9.0/Json.More.dll
+ jsonpatch.net/3.3.0/lib/net9.0/JsonPatch.Net.dll
+ jsonpointer.net/5.2.0/lib/net9.0/JsonPointer.Net.dll
+ kubernetesclient/18.0.13/lib/net10.0/KubernetesClient.dll
+ messagepack.annotations/2.5.192/lib/netstandard2.0/MessagePack.Annotations.dll
+ messagepack/2.5.192/lib/net6.0/MessagePack.dll
+ microsoft.extensions.ai.abstractions/10.3.0/lib/net10.0/Microsoft.Extensions.AI.Abstractions.dll
+ microsoft.extensions.caching.abstractions/10.0.3/lib/net10.0/Microsoft.Extensions.Caching.Abstractions.dll
+ microsoft.extensions.configuration.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll
+ microsoft.extensions.configuration.binder/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.Binder.dll
+ microsoft.extensions.configuration.commandline/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.CommandLine.dll
+ microsoft.extensions.configuration.environmentvariables/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.EnvironmentVariables.dll
+ microsoft.extensions.configuration.fileextensions/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.FileExtensions.dll
+ microsoft.extensions.configuration.json/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.Json.dll
+ microsoft.extensions.configuration.usersecrets/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.UserSecrets.dll
+ microsoft.extensions.configuration/10.0.7/lib/net10.0/Microsoft.Extensions.Configuration.dll
+ microsoft.extensions.dependencyinjection.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
+ microsoft.extensions.dependencyinjection/10.0.7/lib/net10.0/Microsoft.Extensions.DependencyInjection.dll
+ microsoft.extensions.diagnostics.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.Diagnostics.Abstractions.dll
+ microsoft.extensions.diagnostics.healthchecks.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions.dll
+ microsoft.extensions.diagnostics.healthchecks/10.0.7/lib/net10.0/Microsoft.Extensions.Diagnostics.HealthChecks.dll
+ microsoft.extensions.diagnostics/10.0.7/lib/net10.0/Microsoft.Extensions.Diagnostics.dll
+ microsoft.extensions.fileproviders.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.FileProviders.Abstractions.dll
+ microsoft.extensions.fileproviders.physical/10.0.7/lib/net10.0/Microsoft.Extensions.FileProviders.Physical.dll
+ microsoft.extensions.filesystemglobbing/10.0.7/lib/net10.0/Microsoft.Extensions.FileSystemGlobbing.dll
+ microsoft.extensions.hosting.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.Hosting.Abstractions.dll
+ microsoft.extensions.hosting/10.0.7/lib/net10.0/Microsoft.Extensions.Hosting.dll
+ microsoft.extensions.http/10.0.7/lib/net10.0/Microsoft.Extensions.Http.dll
+ microsoft.extensions.logging.abstractions/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.Abstractions.dll
+ microsoft.extensions.logging.configuration/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.Configuration.dll
+ microsoft.extensions.logging.console/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.Console.dll
+ microsoft.extensions.logging.debug/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.Debug.dll
+ microsoft.extensions.logging.eventlog/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.EventLog.dll
+ microsoft.extensions.logging.eventsource/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.EventSource.dll
+ microsoft.extensions.logging/10.0.7/lib/net10.0/Microsoft.Extensions.Logging.dll
+ microsoft.extensions.options.configurationextensions/10.0.7/lib/net10.0/Microsoft.Extensions.Options.ConfigurationExtensions.dll
+ microsoft.extensions.options/10.0.7/lib/net10.0/Microsoft.Extensions.Options.dll
+ microsoft.extensions.primitives/10.0.7/lib/net10.0/Microsoft.Extensions.Primitives.dll
+ microsoft.visualstudio.threading.only/17.13.61/lib/net8.0/Microsoft.VisualStudio.Threading.dll
+ microsoft.visualstudio.validation/17.8.8/lib/net6.0/Microsoft.VisualStudio.Validation.dll
+ modelcontextprotocol.core/1.0.0/lib/net10.0/ModelContextProtocol.Core.dll
+ modelcontextprotocol/1.0.0/lib/net10.0/ModelContextProtocol.dll
+ nerdbank.streams/2.12.87/lib/net8.0/Nerdbank.Streams.dll
+ newtonsoft.json/13.0.4/lib/net6.0/Newtonsoft.Json.dll
+ polly.core/8.6.5/lib/net8.0/Polly.Core.dll
+ semver/3.0.0/lib/net5.0/Semver.dll
+ streamjsonrpc/2.22.23/lib/net8.0/StreamJsonRpc.dll
+ system.diagnostics.eventlog/10.0.7/lib/net10.0/System.Diagnostics.EventLog.dll
+ system.io.hashing/10.0.3/lib/net10.0/System.IO.Hashing.dll
+ yamldotnet/16.3.0/lib/net8.0/YamlDotNet.dll
+
+[analyzerReferences]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/analyzers/
+ Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
+ Microsoft.CodeAnalysis.NetAnalyzers.dll
+<NUGET>/
+ aspire.hosting.apphost/13.3.2/analyzers/dotnet/cs/Aspire.Hosting.Analyzers.dll
+ microsoft.extensions.logging.abstractions/10.0.7/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
+ microsoft.extensions.options/10.0.7/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
+ modelcontextprotocol.core/1.0.0/analyzers/dotnet/cs/ModelContextProtocol.Analyzers.dll
+
+[analyzerConfigFiles]
+<DOTNET>/sdk/9.0.100/Sdks/Microsoft.NET.Sdk/codestyle/cs/build/config/analysislevelstyle_default.globalconfig
+obj/Debug/net10.0/WeatherLiveStream.AppHost.GeneratedMSBuildEditorConfig.editorconfig
