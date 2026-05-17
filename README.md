@@ -448,6 +448,7 @@ docker system prune -af --volumes
 brew cleanup -s
 rm -rf ~/Library/Caches/Homebrew/*
 df -h /
+```
 
 ## 12. CI/CD With GitHub Actions And Argo CD
 
@@ -486,6 +487,29 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 - Argo CD bootstrap: `scripts/install-argocd.sh`
 - GitOps manifests: `gitops/`
 - CI/CD map: `docs/orbstack-kind-map.md`
+
+## 13. Smallest Linux Pod Example
+
+If you want the smallest practical Linux container in this stack, use the BusyBox smoke pod:
+
+```sh
+kubectl apply -f k8s/linux-smoke.yaml
+kubectl rollout status deployment/linux-smoke --timeout=2m
+kubectl port-forward svc/linux-smoke 5050:80
+curl http://127.0.0.1:5050/
+```
+
+That pod is intentionally tiny:
+
+- image: `busybox:1.36`
+- memory request: `16Mi`
+- CPU request: `5m`
+- one static page served over HTTP
+
+Remove it when done:
+
+```sh
+kubectl delete -f k8s/linux-smoke.yaml
 ```
 
 ## References

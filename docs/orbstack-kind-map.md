@@ -26,6 +26,7 @@ macOS
                              |
               +--------------+--------------+
               | Kubernetes workloads         |
+              | - linux-smoke                |
               | - weather-nginx              |
               | - weather-live-stream        |
               | - redis                      |
@@ -75,6 +76,7 @@ Clean everything quickly          delete namespace / delete cluster
 For this project:
 
 - `weather-nginx` teaches reverse proxy and edge routing.
+- `linux-smoke` teaches the smallest Linux container/pod/service pattern.
 - `weather-live-stream` teaches app deployment, probes, and service discovery.
 - `redis` teaches cache/state projection.
 - `redpanda` teaches Kafka-compatible event streaming.
@@ -119,6 +121,7 @@ Practical production patterns:
 - Use Kafka or Redpanda for async work so user requests do not wait on slow side effects.
 - Use Prometheus metrics to track latency, errors, saturation, and throughput.
 - Use rolling deployments and quick rollback for safer releases.
+In this repo, `linux-smoke` is the smallest container example. It uses `busybox:1.36`, runs a tiny HTTP server, and proves the minimum pod/service path without a custom image.
 
 ## Practical Data Usage: Handling 1M DB Queries
 
