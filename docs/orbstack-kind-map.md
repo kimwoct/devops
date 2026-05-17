@@ -2,6 +2,19 @@
 
 This project uses OrbStack as the local Docker engine and kind as the Kubernetes cluster for the weather stack.
 
+## OrbStack Usage Reminder
+
+- Use OrbStack as the local Docker backend for containers and kind nodes.
+- Use OrbStack's `Machines` only when you need a full Linux VM.
+- Do not create a Linux machine just to run Kubernetes workloads; kind already gives you the Kubernetes layer.
+- Use `kubectl --context kind-devops-lite` for this project, not the `orbstack` Kubernetes context.
+- Use `kubectl --context orbstack` only if you intentionally want OrbStack's own built-in Kubernetes cluster.
+- For local app hosting, prefer:
+  - `kind` pods and services
+  - `kubectl port-forward`
+  - `./scripts/start-weather-service.sh`
+  - `./scripts/smoke-linux.sh`
+
 ## Simple Map
 
 ```text
