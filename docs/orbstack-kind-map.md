@@ -596,6 +596,26 @@ $EDITOR .env.local
 
 Put the real token only in `.env.local` as `NGROK_AUTHTOKEN=...`. Do not paste a real ngrok token into markdown, Git commits, shell history snippets, screenshots, or chat. If a token is exposed, revoke or rotate it in the ngrok dashboard before using ngrok again.
 
+If an ngrok token is exposed:
+
+1. Go to the ngrok dashboard.
+2. Revoke or rotate the exposed authtoken.
+3. Put the new token in `.env.local`.
+4. Reconfigure the local agent:
+
+```sh
+./scripts/configure-ngrok.sh
+```
+
+5. Search shell history for the old token and remove any matching entry.
+6. Re-run the repository credential scan before committing. Keep the pattern split so the documentation line does not match itself:
+
+```sh
+TOKEN_SCAN='ngrok config add-authtoken [A-Za-z0-9_\-]+|[A-Za-z0-9]{20,}_[A-Za-z0-9]{20,}|NGROK_'\
+'AUTHTOKEN=[^[:space:]<>.]+'
+rg -n --hidden --glob '!/.git/**' --glob '!**/bin/**' --glob '!**/obj/**' "$TOKEN_SCAN" .
+```
+
 Verify:
 
 ```sh

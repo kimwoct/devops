@@ -604,6 +604,18 @@ Set `NGROK_AUTHTOKEN` only in `.env.local`, then save it into the local ngrok co
 ./scripts/configure-ngrok.sh
 ```
 
+If an ngrok token is leaked in chat, markdown, shell history, or a screenshot:
+
+1. Open the ngrok dashboard and revoke or rotate the exposed authtoken.
+2. Replace `NGROK_AUTHTOKEN` in `.env.local` with the new token.
+3. Re-run local ngrok configuration:
+
+```sh
+./scripts/configure-ngrok.sh
+```
+
+4. Check local shell history and remove any command that contains the old token.
+
 Start or confirm the Kubernetes weather port:
 
 ```sh

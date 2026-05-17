@@ -55,6 +55,7 @@ kind get clusters
 
 - Use ngrok only in front of the active weather Nginx port-forward.
 - Keep ngrok tokens and public-demo passwords in `.env.local`; never write real credentials into markdown, Git commits, or shell-history examples.
+- If an ngrok token is exposed, revoke or rotate it in the ngrok dashboard, replace `NGROK_AUTHTOKEN` in `.env.local`, and re-run `./scripts/configure-ngrok.sh`.
 - Correct local targets:
   - `http://127.0.0.1:5035` when the Kubernetes weather port-forward owns `5035`
   - `http://127.0.0.1:5037` when Aspire DCP owns `5035` and the Kubernetes fallback port is used
