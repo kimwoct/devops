@@ -51,6 +51,32 @@ kind get clusters
 3. Verify with `kubectl get pods`, `kubectl get svc`, and `curl`.
 4. Stop with the matching script.
 
+## Public demo flow
+
+- Use ngrok only in front of the active weather Nginx port-forward.
+- Correct local targets:
+  - `http://127.0.0.1:5035` when the Kubernetes weather port-forward owns `5035`
+  - `http://127.0.0.1:5037` when Aspire DCP owns `5035` and the Kubernetes fallback port is used
+- Do not use `ngrok http 80` for the weather demo; on this Mac that exposes local Apache, so `/` can return `200 OK` while `/weather/local` returns Apache `404`.
+- Before starting ngrok, prove the local API:
+
+```sh
+curl -i http://127.0.0.1:5035/weather/local
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+- Start ngrok against the working local port:
+
+```sh
+ngrok http http://127.0.0.1:5037
+```
+
+- Check ngrok's active target when troubleshooting:
+
+```sh
+curl -fsS http://127.0.0.1:4040/api/tunnels
+```
+
 ## Kubernetes rules
 
 - Keep container images small.
@@ -88,4 +114,3 @@ kind get clusters
 kubectl apply -f k8s/linux-smoke.yaml
 REPO_URL="https://github.com/OWNER/REPO.git" ./scripts/install-argocd.sh
 ```
-
