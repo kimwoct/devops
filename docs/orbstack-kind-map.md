@@ -243,6 +243,59 @@ weather-live-stream
 - Grafana makes those trends visible.
 - Sentry is optional for release-linked exception triage when you need error grouping and user impact.
 
+### Where Terraform Fits
+
+Terraform is infrastructure as code. In this project it should be used for cloud/platform resources, not for the disposable local OrbStack + kind development cluster.
+
+```text
+Terraform
+  provisions platform infrastructure
+  - managed Kubernetes
+  - cloud load balancers
+  - DNS
+  - managed database
+  - managed Redis
+  - managed Kafka / Redpanda
+  - object storage, backups, IAM
+  |
+  v
+Kubernetes platform exists
+  |
+  v
+Argo CD
+  syncs app desired state from Git
+  - weather app
+  - Nginx
+  - OpenTelemetry Collector
+  - ServiceMonitor
+```
+
+Use this split:
+
+- GitHub Actions: build, test, publish image, optionally run `terraform plan` for cloud changes.
+- Terraform: create or change cloud infrastructure.
+- Argo CD: reconcile Kubernetes manifests from `gitops/`.
+- OrbStack + kind: local disposable practice environment; no Terraform needed by default.
+
+Do not put Terraform under `gitops/`. `gitops/` is for Kubernetes desired state watched by Argo CD. Use a separate future path:
+
+```text
+infra/
+  terraform/
+    README.md
+    digitalocean/
+    civo/
+    github/
+```
+
+Credential and state rules:
+
+- Do not commit `.terraform/`.
+- Do not commit `*.tfstate` or `*.tfstate.*`.
+- Do not commit real `*.tfvars` or `*.tfvars.json`.
+- Commit only safe examples, such as `terraform.tfvars.example`.
+- Store cloud provider tokens in GitHub Actions secrets or a local ignored env file, not in Terraform files.
+
 ### Aspire vs kind Runtime Paths
 
 ```text

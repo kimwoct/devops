@@ -17,3 +17,14 @@ CoverageReport/
 .env
 .env.*
 !.env.example
+
+# Terraform local state and credentials.
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!.tfvars.example
+!.tfvars.json.example
+crash.log
+crash.*.log

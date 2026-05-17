@@ -814,7 +814,43 @@ kubectl -n argocd port-forward svc/argocd-server 8080:443
 - GitOps manifests: `gitops/`
 - CI/CD map: `docs/orbstack-kind-map.md`
 
-## 13. Smallest Linux Pod Example
+## 13. Terraform Usage
+
+Terraform is not required for the local OrbStack + kind stack. Keep local kind disposable and script-driven so it stays lightweight on this low-disk Mac.
+
+Use Terraform when you move from local practice to a managed environment such as Civo, DigitalOcean, AWS, Azure, or GCP.
+
+Terraform should manage platform infrastructure:
+
+- managed Kubernetes cluster
+- cloud load balancer and DNS
+- managed database
+- managed Redis
+- managed Kafka or Redpanda
+- object storage, backups, and IAM
+- Argo CD installation or bootstrap inputs
+
+Argo CD should continue to manage Kubernetes app desired state:
+
+- weather app Deployment and Service
+- Nginx reverse proxy
+- OpenTelemetry Collector
+- ServiceMonitor and app Kubernetes config
+
+Recommended future layout:
+
+```text
+infra/
+  terraform/
+    README.md
+    digitalocean/
+    civo/
+    github/
+```
+
+Do not commit Terraform state or real variable files. This repo ignores `.terraform/`, `*.tfstate`, and `*.tfvars`; commit only examples such as `terraform.tfvars.example`.
+
+## 14. Smallest Linux Pod Example
 
 If you want the smallest practical Linux container in this stack, use the BusyBox smoke pod:
 

@@ -5,6 +5,13 @@
 .env
 .env.*
 !.env.example
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+!.tfvars.example
+!.tfvars.json.example
 .vs/
 .vscode/
 Dockerfile
