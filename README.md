@@ -501,6 +501,12 @@ The default local endpoint is:
 http://127.0.0.1:5035/
 ```
 
+If Aspire is already running, port `5035` can be owned by Aspire DCP. In that case the start script automatically falls back to:
+
+```text
+http://127.0.0.1:5037/
+```
+
 The default path is:
 
 ```text
@@ -525,6 +531,7 @@ Useful overrides:
 
 ```sh
 LOCAL_PORT=8080 ./scripts/start-weather-service.sh
+FALLBACK_LOCAL_PORT=5039 ./scripts/start-weather-service.sh
 CLUSTER_NAME=devops-lite IMAGE_NAME=weather-live-stream:local ./scripts/start-weather-service.sh
 ```
 
@@ -536,6 +543,8 @@ For direct app debugging without Nginx, run a temporary port-forward in another 
 kubectl --context kind-devops-lite port-forward svc/weather-live-stream 5036:80 --address 127.0.0.1
 curl -i http://127.0.0.1:5036/weather/local
 ```
+
+If Prometheus is installed, the script also applies `k8s/weather-servicemonitor.yaml` so Prometheus can discover the app's `/metrics` endpoint. If the `ServiceMonitor` CRD is missing, the script skips that optional manifest and the app still starts.
 
 Stop only the weather microservice and its localhost port-forward without deleting the kind cluster:
 
@@ -556,8 +565,27 @@ kubectl delete -f k8s/weather-live-stream.yaml --ignore-not-found
 
 - .NET Aspire is useful for local developer observability when the app is run through an Aspire AppHost; it can show logs, traces, metrics, resources, and service dependencies in the Aspire dashboard.
 - The current Kubernetes script deploys the weather service directly to kind. To monitor this exact kind deployment, use Kubernetes checks (`kubectl get pods`, `kubectl logs`) and the optional Prometheus/Grafana stack from this guide.
-- To use Aspire for the weather service, add an Aspire AppHost project and register `WeatherLiveStream.App` there. Run the AppHost locally when you want the Aspire dashboard experience, and keep the kind script for validating the containerized Kubernetes path.
-- If the weather service should appear with richer telemetry in Aspire, wire the app to OpenTelemetry/Aspire service defaults so it exports logs, metrics, and traces to the dashboard instead of only serving HTTP traffic.
+- Aspire is already wired through `WeatherLiveStream.AppHost`. Use it when you want the local Aspire dashboard and app resource view.
+- The app's direct local launch profile uses `http://localhost:5038` so it does not collide with the Kubernetes Nginx port-forward on `5035`.
+- Keep Aspire and kind as separate run paths: Aspire is the local developer dashboard path; kind is the Kubernetes deployment path.
+
+Start Aspire:
+
+```sh
+./scripts/run-aspire.sh
+```
+
+Check Aspire state:
+
+```sh
+aspire describe --apphost WeatherLiveStream.AppHost/WeatherLiveStream.AppHost.csproj
+```
+
+If Aspire is running and you still need the Kubernetes stack, use either the automatic fallback port or set one explicitly:
+
+```sh
+LOCAL_PORT=5037 ./scripts/start-weather-service.sh
+```
 
 ## 9. Stop and Start
 

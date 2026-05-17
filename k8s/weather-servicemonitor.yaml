@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: weather-live-stream
+  labels:
+    app: weather-live-stream
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: weather-live-stream
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

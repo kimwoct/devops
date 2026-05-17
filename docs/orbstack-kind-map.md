@@ -14,6 +14,7 @@ This project uses OrbStack as the local Docker engine and kind as the Kubernetes
   - `kubectl port-forward`
   - `./scripts/start-weather-service.sh`
   - `./scripts/smoke-linux.sh`
+- Use `./scripts/run-aspire.sh` when you want the Aspire dashboard path instead of the Kubernetes path.
 
 ## Simple Map
 
@@ -61,6 +62,7 @@ macOS
 - `kubectl --context orbstack get pods -A` only shows OrbStack's built-in system pods.
 - `kubectl --context kind-devops-lite get pods -A` shows the real dev stack: Redis, Redpanda, Prometheus, Grafana, and kind system pods.
 - The weather app deployments currently exist but are scaled to `0`, so there are no weather pods until you run `./scripts/start-weather-service.sh`.
+- Aspire can also use local ports through DCP. If Aspire owns `5035`, the Kubernetes script falls back to `5037`.
 
 ## Step 1 - Understand The Roles
 
@@ -69,6 +71,7 @@ macOS
 - kind creates a Kubernetes cluster inside Docker.
 - `kubectl` talks to whichever Kubernetes context is selected.
 - The weather app is not deployed to OrbStack's built-in Kubernetes context; it is deployed to kind.
+- Aspire is not the Kubernetes cluster. It is a local AppHost and dashboard workflow for developer-time orchestration.
 
 ## Why Use Kubernetes For Development
 
@@ -239,6 +242,294 @@ weather-live-stream
 - Prometheus says whether the service trend is healthy.
 - Grafana makes those trends visible.
 - Sentry is optional for release-linked exception triage when you need error grouping and user impact.
+
+### Aspire vs kind Runtime Paths
+
+```text
+Aspire path
+  ./scripts/run-aspire.sh
+    -> WeatherLiveStream.AppHost
+    -> Aspire dashboard / DCP
+    -> local app endpoint, usually localhost:5038 or an Aspire-assigned endpoint
+
+Kubernetes path
+  ./scripts/start-weather-service.sh
+    -> Docker build
+    -> kind load image
+    -> weather-live-stream pod
+    -> weather-nginx service
+    -> localhost:5035, or 5037 when Aspire owns 5035
+```
+
+- Use Aspire when you want local service orchestration, dashboard, logs, metrics, traces, and quick app iteration.
+- Use kind when you want to validate the container image, Kubernetes YAML, probes, Services, Nginx proxy, OpenTelemetry Collector, Prometheus, and Argo CD GitOps path.
+- Do not expect the OrbStack Kubernetes UI to show kind workloads; use `kubectl --context kind-devops-lite`.
+
+### Dashboard And Error Trace Runbook
+
+Use this runbook when you want to prove the observability path from shell commands, not just read the architecture.
+
+#### 1. Check Which Runtime Owns The App
+
+```sh
+cd /Users/kingwong/Downloads/devops
+kubectl config current-context
+lsof -nP -iTCP:5035 -sTCP:LISTEN || true
+lsof -nP -iTCP:5037 -sTCP:LISTEN || true
+lsof -nP -iTCP:5038 -sTCP:LISTEN || true
+```
+
+What the ports mean:
+
+- `5035`: preferred Kubernetes Nginx port-forward.
+- `5037`: Kubernetes fallback when Aspire DCP owns `5035`.
+- `5038`: direct local app launch profile used by Aspire or `dotnet run`.
+
+If `5035` is owned by `dcp`, Aspire is using that port. Start Kubernetes anyway; the script will fall back to `5037`.
+
+#### 2. Start The Kubernetes Weather Stack
+
+```sh
+cd /Users/kingwong/Downloads/devops
+./scripts/start-weather-service.sh
+```
+
+What this script does:
+
+- starts OrbStack if needed
+- builds `weather-live-stream:local`
+- loads the image into kind
+- applies `k8s/otel-collector.yaml`
+- applies `k8s/weather-live-stream.yaml`
+- applies `k8s/weather-nginx.yaml`
+- applies `k8s/weather-servicemonitor.yaml` only when Prometheus CRDs exist
+- opens a local port-forward on `5035`, or `5037` if Aspire owns `5035`
+
+If you want to choose the Kubernetes port yourself:
+
+```sh
+LOCAL_PORT=5037 ./scripts/start-weather-service.sh
+```
+
+#### 3. Confirm Pods, Services, And Monitoring
+
+```sh
+kubectl --context kind-devops-lite get pods -A
+kubectl --context kind-devops-lite get svc -A
+kubectl --context kind-devops-lite get deploy -A
+kubectl --context kind-devops-lite get servicemonitor -A 2>/dev/null || true
+```
+
+Expected important resources:
+
+- `default/deployment/weather-live-stream`
+- `default/deployment/weather-nginx`
+- `observability/deployment/otel-collector`
+- `monitoring/deployment/monitoring-grafana`
+- `monitoring/prometheus/monitoring-kube-prometheus-prometheus`
+
+#### 4. Watch OpenTelemetry Trace Output
+
+Open one terminal for trace logs:
+
+```sh
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector -f
+```
+
+What this shows:
+
+- traces received by the OpenTelemetry Collector
+- one or more spans for app requests
+- basic proof that the app is exporting OTLP telemetry
+
+Current local collector behavior:
+
+- It uses the `debug` exporter.
+- It prints trace batch summaries to logs.
+- It does not provide a trace search UI yet.
+
+#### 5. Generate Normal And Error Traffic
+
+In another terminal, use the active Kubernetes URL.
+
+If the script used `5035`:
+
+```sh
+curl -i http://127.0.0.1:5035/
+curl -i http://127.0.0.1:5035/weather/local
+curl -i http://127.0.0.1:5035/not-existing-route
+```
+
+If Aspire owns `5035` and the script fell back to `5037`:
+
+```sh
+curl -i http://127.0.0.1:5037/
+curl -i http://127.0.0.1:5037/weather/local
+curl -i http://127.0.0.1:5037/not-existing-route
+```
+
+What these requests prove:
+
+- `/` proves the Razor dashboard route works.
+- `/weather/local` proves the app API route works.
+- `/not-existing-route` creates a `404` HTTP error-style trace.
+
+Important distinction:
+
+- A `404` is an HTTP error trace.
+- A real exception trace requires an app endpoint or code path that throws an exception.
+- If you need exception grouping and release correlation, add Sentry or a trace backend such as Tempo/Jaeger plus structured error handling.
+
+#### 6. Read The Trace Logs
+
+After generating traffic, inspect the collector logs:
+
+```sh
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector --tail=200
+```
+
+Filter for useful trace words:
+
+```sh
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector --tail=500 \
+  | grep -Ei "traces|traceid|spanid|status|error|weather-live-stream|404"
+```
+
+Common output with the current debug exporter:
+
+```text
+Traces {"kind":"exporter","data_type":"traces","name":"debug","resource spans":1,"spans":1}
+```
+
+How to interpret it:
+
+- `Traces` means the collector received trace data.
+- `resource spans` means one service resource emitted spans.
+- `spans` means individual request operations were exported.
+- If no new trace lines appear after `curl`, check the app env var `OTEL_EXPORTER_OTLP_ENDPOINT`.
+
+#### 7. Open Prometheus
+
+Prometheus stores metrics, not detailed traces.
+
+```sh
+kubectl --context kind-devops-lite -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+```
+
+Open:
+
+```text
+http://127.0.0.1:9090
+```
+
+Useful checks:
+
+- Status > Targets
+- query: `up`
+- query: `http_server_request_duration_seconds_count`
+- query: `rate(http_server_request_duration_seconds_count[5m])`
+
+If the weather service target is missing:
+
+```sh
+kubectl --context kind-devops-lite get servicemonitor -A
+kubectl --context kind-devops-lite get svc weather-live-stream -o yaml
+curl -i http://127.0.0.1:5035/metrics
+```
+
+Use `5037` in the curl command if the Kubernetes stack is using the fallback port.
+
+#### 8. Open Grafana
+
+Grafana visualizes Prometheus metrics.
+
+```sh
+kubectl --context kind-devops-lite -n monitoring port-forward svc/monitoring-grafana 3000:80
+```
+
+Open:
+
+```text
+http://127.0.0.1:3000
+```
+
+Login:
+
+```text
+username: admin
+password: admin
+```
+
+Use Grafana Explore with the Prometheus data source and try:
+
+```text
+up
+rate(http_server_request_duration_seconds_count[5m])
+process_cpu_seconds_total
+```
+
+What Grafana tells you:
+
+- whether the service is up
+- request rate over time
+- process/runtime behavior
+- cluster-level workload health through existing dashboards
+
+What Grafana does not show yet:
+
+- full trace waterfall
+- exception grouping
+- release regression tracking
+
+For those, add Grafana Tempo, Jaeger, or Sentry.
+
+#### 9. Open Aspire Dashboard
+
+Use Aspire when you want local developer-time resource views instead of the Kubernetes path.
+
+```sh
+cd /Users/kingwong/Downloads/devops
+./scripts/run-aspire.sh
+```
+
+The script prints the Aspire dashboard URL. You can also inspect Aspire state:
+
+```sh
+aspire describe --apphost WeatherLiveStream.AppHost/WeatherLiveStream.AppHost.csproj
+```
+
+Aspire is best for:
+
+- local AppHost resource view
+- developer logs
+- local traces and metrics when the app runs under Aspire
+- quick iteration without rebuilding a container image
+
+kind is best for:
+
+- testing Kubernetes YAML
+- testing container images
+- testing Nginx proxy behavior
+- testing OpenTelemetry Collector and Prometheus wiring
+- testing Argo CD GitOps behavior
+
+#### 10. Stop The Stack
+
+Stop the Kubernetes weather app and its port-forward:
+
+```sh
+./scripts/stop-weather-service.sh
+```
+
+The stop script handles:
+
+- normal `5035` Kubernetes port-forward
+- fallback `5037` Kubernetes port-forward
+- `weather-nginx`
+- `weather-live-stream`
+- `otel-collector`
+
+Stop Aspire with `Ctrl+C` in the terminal running `./scripts/run-aspire.sh`.
 
 ### Why Not Let GitHub Actions Deploy Directly To OrbStack
 

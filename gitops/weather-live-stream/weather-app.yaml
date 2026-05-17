@@ -5,6 +5,7 @@ metadata:
   namespace: default
   labels:
     app: weather-live-stream
+    release: monitoring
 spec:
   replicas: 1
   selector:
@@ -49,6 +50,7 @@ metadata:
   namespace: default
   labels:
     app: weather-live-stream
+    release: monitoring
 spec:
   type: ClusterIP
   selector:
@@ -57,3 +59,20 @@ spec:
     - name: http
       port: 80
       targetPort: http
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: weather-live-stream
+  namespace: default
+  labels:
+    app: weather-live-stream
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: weather-live-stream
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

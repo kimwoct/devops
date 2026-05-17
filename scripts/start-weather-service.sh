@@ -6,11 +6,15 @@ CLUSTER_NAME="${CLUSTER_NAME:-devops-lite}"
 KIND_CONTEXT="kind-${CLUSTER_NAME}"
 IMAGE_NAME="${IMAGE_NAME:-weather-live-stream:local}"
 LOCAL_PORT="${LOCAL_PORT:-5035}"
+FALLBACK_LOCAL_PORT="${FALLBACK_LOCAL_PORT:-5037}"
 APP_DEPLOYMENT="${APP_DEPLOYMENT:-weather-live-stream}"
 PROXY_DEPLOYMENT="${PROXY_DEPLOYMENT:-weather-nginx}"
 SERVICE_NAME="${SERVICE_NAME:-weather-nginx}"
 LEGACY_SERVICE_NAME="${LEGACY_SERVICE_NAME:-weather-live-stream}"
 SERVICE_PORT="${SERVICE_PORT:-80}"
+PORT_FORWARD_LOG_SET="${PORT_FORWARD_LOG+x}"
+PORT_FORWARD_PID_FILE_SET="${PORT_FORWARD_PID_FILE+x}"
+PORT_FORWARD_SESSION_SET="${PORT_FORWARD_SESSION+x}"
 PORT_FORWARD_LOG="${PORT_FORWARD_LOG:-/tmp/weather-live-stream-port-forward.log}"
 PORT_FORWARD_PID_FILE="${PORT_FORWARD_PID_FILE:-/tmp/weather-live-stream-port-forward.pid}"
 PORT_FORWARD_SESSION="${PORT_FORWARD_SESSION:-weather-live-stream-port-forward}"
@@ -40,6 +44,16 @@ wait_for_weather_endpoint() {
   return 1
 }
 
+port_owner_args() {
+  local port="$1"
+  local pid
+
+  pid="$(lsof -nP -iTCP:"${port}" -sTCP:LISTEN -t 2>/dev/null | head -n 1 || true)"
+  if [[ -n "${pid}" ]]; then
+    ps -p "${pid}" -o args= 2>/dev/null || true
+  fi
+}
+
 if command -v orb >/dev/null 2>&1; then
   orb start
 fi
@@ -58,6 +72,11 @@ kind load docker-image "${IMAGE_NAME}" --name "${CLUSTER_NAME}"
 kubectl apply -f "${ROOT_DIR}/k8s/otel-collector.yaml"
 kubectl apply -f "${ROOT_DIR}/k8s/weather-live-stream.yaml"
 kubectl apply -f "${ROOT_DIR}/k8s/weather-nginx.yaml"
+if kubectl api-resources --api-group=monitoring.coreos.com | grep -q '^servicemonitors'; then
+  kubectl apply -f "${ROOT_DIR}/k8s/weather-servicemonitor.yaml"
+else
+  echo "ServiceMonitor CRD not found; skipping Prometheus scrape manifest."
+fi
 kubectl rollout status deployment/otel-collector -n observability --timeout=5m
 kubectl rollout restart deployment/"${APP_DEPLOYMENT}"
 kubectl rollout restart deployment/"${PROXY_DEPLOYMENT}"
@@ -85,9 +104,31 @@ if [[ -n "${PIDS}" ]]; then
   PIDS="$(lsof -nP -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN -t 2>/dev/null || true)"
 
   if [[ -n "${PIDS}" ]]; then
-    echo "Port ${LOCAL_PORT} is already in use by another process." >&2
-    lsof -nP -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN >&2
-    exit 1
+    OWNER_ARGS="$(port_owner_args "${LOCAL_PORT}")"
+
+    if [[ "${LOCAL_PORT}" == "5035" && "${OWNER_ARGS}" == *dcp* ]]; then
+      echo "Port 5035 is already used by Aspire DCP; using Kubernetes fallback port ${FALLBACK_LOCAL_PORT}."
+      LOCAL_PORT="${FALLBACK_LOCAL_PORT}"
+      if [[ -z "${PORT_FORWARD_LOG_SET}" ]]; then
+        PORT_FORWARD_LOG="/tmp/weather-live-stream-port-forward-${LOCAL_PORT}.log"
+      fi
+      if [[ -z "${PORT_FORWARD_PID_FILE_SET}" ]]; then
+        PORT_FORWARD_PID_FILE="/tmp/weather-live-stream-port-forward-${LOCAL_PORT}.pid"
+      fi
+      if [[ -z "${PORT_FORWARD_SESSION_SET}" ]]; then
+        PORT_FORWARD_SESSION="weather-live-stream-port-forward-${LOCAL_PORT}"
+      fi
+
+      if lsof -nP -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN >/dev/null 2>&1; then
+        echo "Fallback port ${LOCAL_PORT} is already in use." >&2
+        lsof -nP -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN >&2
+        exit 1
+      fi
+    else
+      echo "Port ${LOCAL_PORT} is already in use by another process." >&2
+      lsof -nP -iTCP:"${LOCAL_PORT}" -sTCP:LISTEN >&2
+      exit 1
+    fi
   fi
 fi
 
