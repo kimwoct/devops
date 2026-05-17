@@ -589,8 +589,12 @@ brew install ngrok
 Add your ngrok authtoken from the ngrok dashboard:
 
 ```sh
-ngrok config add-authtoken "<YOUR_AUTHTOKEN>"
+export NGROK_AUTHTOKEN="<paste-token-here>"
+ngrok config add-authtoken "$NGROK_AUTHTOKEN"
+unset NGROK_AUTHTOKEN
 ```
+
+Do not paste a real ngrok token into markdown, Git commits, shell history snippets, screenshots, or chat. If a token is exposed, revoke or rotate it in the ngrok dashboard before using ngrok again.
 
 Verify:
 
