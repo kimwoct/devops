@@ -1,12 +1,41 @@
 using Microsoft.AspNetCore.HttpOverrides;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using WeatherLiveStream.App;
 
 var builder = WebApplication.CreateBuilder(args);
 var reverseProxyEnabled = builder.Configuration.GetValue("ReverseProxy:Enabled", false);
+var serviceName = builder.Configuration["OTEL_SERVICE_NAME"] ?? "weather-live-stream";
+var serviceVersion = typeof(Program).Assembly.GetName().Version?.ToString() ?? "dev";
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
 
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddSingleton<LocalWeatherService>();
+builder.Services.AddHttpClient();
+builder.Services.AddOpenTelemetry()
+    .ConfigureResource(resource => resource
+        .AddService(
+            serviceName: serviceName,
+            serviceVersion: serviceVersion,
+            serviceInstanceId: Environment.MachineName))
+    .WithTracing(tracing =>
+    {
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation();
+
+        if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+        {
+            tracing.AddOtlpExporter();
+        }
+    })
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddRuntimeInstrumentation()
+        .AddPrometheusExporter());
 
 if (reverseProxyEnabled)
 {
@@ -47,6 +76,7 @@ app.UseRouting();
 app.UseAuthorization();
 
 app.MapStaticAssets();
+app.MapPrometheusScrapingEndpoint();
 app.MapGet("/weather/local", (LocalWeatherService weather) => weather.GetReport());
 app.MapRazorPages()
    .WithStaticAssets();

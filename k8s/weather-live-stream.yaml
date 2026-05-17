@@ -21,6 +21,10 @@ spec:
           env:
             - name: ReverseProxy__Enabled
               value: "true"
+            - name: OTEL_SERVICE_NAME
+              value: weather-live-stream
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.observability.svc.cluster.local:4317
           ports:
             - name: http
               containerPort: 8080

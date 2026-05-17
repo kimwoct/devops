@@ -10,7 +10,7 @@ This guide is tuned for this Mac's current disk pressure: about 29 GiB free on `
 | --- | --- | --- |
 | Container runtime | OrbStack + Docker CLI | Lightweight Docker Desktop replacement with the `docker` client needed by kind. |
 | Kubernetes | kind | Disposable local Kubernetes clusters running in Docker containers. |
-| Observability | kube-prometheus-stack | Prometheus Operator, Prometheus, Grafana, kube-state-metrics. |
+| Observability | OpenTelemetry + kube-prometheus-stack | OpenTelemetry emits traces and metrics; Prometheus stores metrics; Grafana visualizes them. |
 | Cache | Redis via Bitnami Helm chart | Single-node Redis for local development. |
 | Kafka-compatible streaming | Redpanda | Kafka API-compatible broker without ZooKeeper or JVM. |
 
@@ -173,6 +173,219 @@ kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80
 ```
 
 Use <http://127.0.0.1:3000> only if you want to inspect Grafana in a browser. The CLI workflow does not require it. Log in with `admin` / `admin`, then stop the port-forward with `Ctrl+C`.
+
+### OpenTelemetry, Prometheus, And Grafana Tutorial
+
+Use this when you want to understand what each tool does, not just start it.
+
+#### Why These Tools Matter
+
+- `OpenTelemetry` is the instrumentation standard. The app uses it to create traces and metrics without locking into one vendor.
+- `Prometheus` stores metrics such as request rate, error rate, latency, CPU, memory, and pod health.
+- `Grafana` turns those metrics into dashboards that a human can read quickly.
+- `OpenTelemetry Collector` receives traces from the app and can forward them to Jaeger, Grafana Tempo, Aspire, Sentry, or another backend.
+- `Sentry` is useful for error tracking and release-aware debugging. Use it when you need exception grouping, stack traces, affected users, and deploy regression tracking.
+
+For this low-disk local stack, OpenTelemetry is enabled by default and the collector prints traces to logs. Sentry is documented as an optional production-style backend because self-hosting Sentry locally is much heavier than this kind cluster needs.
+
+#### Step 1 - Install The Monitoring Stack
+
+- `helm` installs the whole monitoring bundle from the chart.
+- `kube-prometheus-stack` gives you Prometheus, Grafana, kube-state-metrics, and the operator wiring in one package.
+- Short retention keeps the stack small on this Mac.
+
+You already installed it with:
+
+```sh
+helm upgrade --install monitoring prometheus-community/kube-prometheus-stack \
+  --namespace monitoring \
+  --create-namespace \
+  --values values-prometheus-lite.yaml
+```
+
+#### Step 2 - Start The Weather App With OpenTelemetry
+
+- The weather app uses OpenTelemetry instrumentation for ASP.NET Core, outgoing HTTP calls, runtime metrics, and Prometheus metrics.
+- `/metrics` exposes Prometheus-format metrics.
+- `OTEL_EXPORTER_OTLP_ENDPOINT` sends traces to the collector inside Kubernetes.
+- The local collector currently uses a `debug` exporter, so traces appear in collector logs.
+
+Start the app stack:
+
+```sh
+./scripts/start-weather-service.sh
+```
+
+Verify the collector:
+
+```sh
+kubectl --context kind-devops-lite get pods -n observability
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector --tail=50
+```
+
+Generate traffic so traces and metrics exist:
+
+```sh
+curl -i http://127.0.0.1:5035/
+curl -i http://127.0.0.1:5035/weather/local
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector --tail=80
+```
+
+What to look for:
+
+- `otel-collector` pod should be `Running`.
+- Collector logs should show trace export output after app traffic.
+- The app should still respond through Nginx at `http://127.0.0.1:5035`.
+
+#### Step 3 - Start With Prometheus
+
+- `kubectl port-forward` exposes Prometheus locally without adding an Ingress or LoadBalancer.
+- Prometheus is the collector. It asks targets for `/metrics`, stores time-series samples, and lets you query them.
+- In this repo, it is the place to confirm that the weather app, Kubernetes, and any exporters are alive.
+
+Open the Prometheus UI or use curl:
+
+```sh
+kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090
+```
+
+Then open:
+
+- `http://127.0.0.1:9090`
+
+Useful checks in Prometheus:
+
+- Status > Targets to see which pods are being scraped.
+- Graph to run a query like `up`.
+- Graph to run `process_cpu_seconds_total` for process-level behavior.
+
+Why this matters:
+
+- If a target is missing here, Grafana will not be able to graph it.
+- If Prometheus cannot scrape the target, the issue is usually service discovery, labels, or the app not exposing `/metrics`.
+
+#### Step 4 - Check The Weather App Metrics
+
+- The weather app exports metrics on `/metrics`.
+- Prometheus scrapes those metrics and turns them into queryable samples.
+- This is how you prove the app is observable before you even open Grafana.
+
+From the cluster, check the service first:
+
+```sh
+kubectl --context kind-devops-lite get svc weather-live-stream
+kubectl --context kind-devops-lite port-forward svc/weather-live-stream 5036:80 --address 127.0.0.1
+curl -i http://127.0.0.1:5036/metrics
+```
+
+What to look for:
+
+- `200 OK` means the app is exposing metrics.
+- A text payload means Prometheus can usually scrape it.
+- If `/metrics` fails, fix the app before debugging Grafana.
+
+#### Step 5 - Open Grafana
+
+- `Grafana` is the visualization layer.
+- It does not collect metrics itself.
+- It reads from Prometheus and turns time-series data into dashboards.
+
+Start the UI:
+
+```sh
+kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80
+```
+
+Then open:
+
+- `http://127.0.0.1:3000`
+
+Log in with `admin` / `admin`.
+
+In Grafana:
+
+- Use Explore to test a Prometheus query.
+- Open the default dashboard or build your own panel.
+- Add a panel for request rate, latency, or pod health.
+
+#### Step 6 - Build A Useful Query
+
+Prometheus is most useful when you query real signals.
+
+Good starter queries:
+
+- `up`
+- `rate(http_server_request_duration_seconds_count[5m])`
+- `rate(process_cpu_seconds_total[5m])`
+- `sum by (job) (up)`
+
+How to think about them:
+
+- `up` tells you whether a scrape target is reachable.
+- `rate(...)` tells you how fast a counter is changing.
+- `sum by (job)` groups related targets together.
+
+#### Step 7 - Where Sentry Fits
+
+Sentry and OpenTelemetry solve overlapping but different problems.
+
+| Tool | Best for | Local role | Production role |
+| --- | --- | --- | --- |
+| OpenTelemetry | Vendor-neutral traces, metrics, and logs pipeline | Instrument app once and send traces to local collector logs | Send telemetry to Tempo, Jaeger, Sentry, Datadog, New Relic, Azure Monitor, or another backend |
+| Prometheus | Metrics storage and PromQL queries | Store short-lived local metrics | Alert on SLOs, saturation, error rate, and latency |
+| Grafana | Dashboards and visual exploration | Inspect app and cluster behavior | Operations dashboards and incident views |
+| Sentry | Exceptions, stack traces, releases, user impact | Optional cloud or remote DSN only | Error triage, release regression detection, frontend and backend exception grouping |
+
+Do not self-host Sentry on this low-disk Mac unless you specifically need to learn Sentry operations. For this project, the practical path is:
+
+1. Keep OpenTelemetry in the app.
+2. Send local traces to the lightweight collector.
+3. In production, point the collector or Sentry SDK at the real backend.
+4. Add release tags in CI/CD so errors connect back to GitHub commits and image tags.
+
+#### Step 8 - Why Observability Helps CI/CD
+
+CI tells you whether the code built and tests passed. Observability tells you whether the deployed system is healthy after release.
+
+In this project:
+
+- GitHub Actions proves restore, build, test, and image publishing.
+- Argo CD proves Kubernetes desired state is synced.
+- OpenTelemetry proves requests create traces.
+- Prometheus proves metrics are being scraped.
+- Grafana proves humans can inspect app and cluster behavior.
+- Sentry, when enabled, proves new releases are not creating new exception groups.
+
+This is the practical DevOps loop:
+
+```text
+git push
+  -> GitHub Actions build/test/image
+  -> Argo CD sync
+  -> Kubernetes rollout
+  -> OpenTelemetry traces
+  -> Prometheus metrics
+  -> Grafana/Sentry release verification
+```
+
+#### Step 9 - Use The Tools Together
+
+Use this order when debugging:
+
+1. `kubectl get pods` to see whether the workload is running.
+2. `kubectl get svc` to see whether the Service exists.
+3. `curl /metrics` through a port-forward to check the app endpoint.
+4. Prometheus Targets to check scrape status.
+5. Grafana Explore to visualize the query.
+
+That sequence keeps the diagnosis simple:
+
+- `kubectl` tells you whether Kubernetes is healthy.
+- `curl` tells you whether the app is exposing metrics.
+- `Prometheus` tells you whether scraping works.
+- `Grafana` tells you whether the data is readable by humans.
+- `OpenTelemetry Collector` tells you whether request traces are leaving the app.
+- `Sentry` tells you which errors are tied to a release, commit, or user impact when you enable it.
 
 ## 5. Install Redis
 

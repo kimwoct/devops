@@ -55,8 +55,10 @@ kubectl config use-context "${KIND_CONTEXT}" >/dev/null
 docker build -t "${IMAGE_NAME}" "${ROOT_DIR}"
 kind load docker-image "${IMAGE_NAME}" --name "${CLUSTER_NAME}"
 
+kubectl apply -f "${ROOT_DIR}/k8s/otel-collector.yaml"
 kubectl apply -f "${ROOT_DIR}/k8s/weather-live-stream.yaml"
 kubectl apply -f "${ROOT_DIR}/k8s/weather-nginx.yaml"
+kubectl rollout status deployment/otel-collector -n observability --timeout=5m
 kubectl rollout restart deployment/"${APP_DEPLOYMENT}"
 kubectl rollout restart deployment/"${PROXY_DEPLOYMENT}"
 kubectl rollout status deployment/"${APP_DEPLOYMENT}" --timeout=5m

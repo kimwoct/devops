@@ -44,6 +44,7 @@ macOS
               | - weather-live-stream        |
               | - redis                      |
               | - redpanda                   |
+              | - otel-collector             |
               | - prometheus / grafana       |
               +--------------+--------------+
                              |
@@ -81,7 +82,7 @@ Expose one entry point            Nginx / Ingress / port-forward
 Restart failed processes          liveness + readiness probes
 Change config safely              ConfigMaps + Secrets
 Test app startup behavior         rollout status + logs
-Observe service health            Prometheus + Grafana
+Observe service health            OpenTelemetry + Prometheus + Grafana
 Replace local dependencies        Redis + Redpanda in cluster
 Clean everything quickly          delete namespace / delete cluster
 ```
@@ -93,6 +94,7 @@ For this project:
 - `weather-live-stream` teaches app deployment, probes, and service discovery.
 - `redis` teaches cache/state projection.
 - `redpanda` teaches Kafka-compatible event streaming.
+- `otel-collector` teaches vendor-neutral trace shipping.
 - `prometheus` and `grafana` teach service monitoring.
 
 ## Practical Production Usage: Serving 1M Users
@@ -121,7 +123,7 @@ API pods: weather-live-stream replicas
   +--> Database read replicas / primary DB
   |
   v
-Prometheus + Grafana + alerts
+OpenTelemetry + Prometheus + Grafana + alerts
 ```
 
 Practical production patterns:
@@ -132,6 +134,7 @@ Practical production patterns:
 - Put Nginx or cloud ingress in front of app services.
 - Use Redis for repeated hot reads, sessions, rate limits, and short-lived projections.
 - Use Kafka or Redpanda for async work so user requests do not wait on slow side effects.
+- Use OpenTelemetry traces to follow one request across services.
 - Use Prometheus metrics to track latency, errors, saturation, and throughput.
 - Use rolling deployments and quick rollback for safer releases.
 In this repo, `linux-smoke` is the smallest container example. It uses `busybox:1.36`, runs a tiny HTTP server, and proves the minimum pod/service path without a custom image.
@@ -213,6 +216,29 @@ OrbStack Docker backend + kind Kubernetes
   v
 localhost:5035 via kubectl port-forward
 ```
+
+### Observability In The Delivery Loop
+
+```text
+request
+  |
+  v
+weather-live-stream
+  |
+  +--> /metrics -----------------> Prometheus ----------> Grafana
+  |
+  +--> OTLP traces --------------> OpenTelemetry Collector
+                                      |
+                                      +--> local debug logs now
+                                      +--> Tempo / Jaeger / Sentry later
+```
+
+- CI says whether code passed tests.
+- Argo CD says whether Kubernetes matches Git.
+- OpenTelemetry says what one request did.
+- Prometheus says whether the service trend is healthy.
+- Grafana makes those trends visible.
+- Sentry is optional for release-linked exception triage when you need error grouping and user impact.
 
 ### Why Not Let GitHub Actions Deploy Directly To OrbStack
 

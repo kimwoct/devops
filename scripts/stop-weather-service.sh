@@ -68,3 +68,9 @@ for DEPLOYMENT in "${PROXY_DEPLOYMENT}" "${APP_DEPLOYMENT}"; do
     echo "deployment/${DEPLOYMENT} was not found in ${KIND_CONTEXT}; nothing to scale."
   fi
 done
+
+if kubectl --context "${KIND_CONTEXT}" get deployment otel-collector -n observability >/dev/null 2>&1; then
+  kubectl --context "${KIND_CONTEXT}" scale deployment/otel-collector -n observability --replicas=0
+  kubectl --context "${KIND_CONTEXT}" rollout status deployment/otel-collector -n observability --timeout=2m
+  echo "Scaled deployment/otel-collector in namespace observability to 0 replicas."
+fi
