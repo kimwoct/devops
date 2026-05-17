@@ -42,6 +42,6 @@ Default login:
   password: first password from:
   kubectl -n ${ARGOCD_NAMESPACE} get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
 
-Before syncing the app, replace OWNER and IMAGE_TAG in:
-  gitops/weather-live-stream/weather-live-stream.yaml
+Before syncing the app, confirm the image in:
+  gitops/weather-live-stream/weather-app.yaml
 EOF

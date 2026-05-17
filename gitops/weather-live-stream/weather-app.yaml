@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: weather-live-stream
-          image: ghcr.io/OWNER/weather-live-stream:IMAGE_TAG
-          imagePullPolicy: IfNotPresent
+          image: ghcr.io/kimwoct/weather-live-stream:latest
+          imagePullPolicy: Always
           env:
             - name: ReverseProxy__Enabled
               value: "true"
