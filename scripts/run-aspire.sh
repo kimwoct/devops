@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${ROOT_DIR}/scripts/load-env.sh"
+load_project_env "${ROOT_DIR}"
+
 DOTNET_BIN="/opt/homebrew/bin/dotnet"
 ASPIRE_BIN="${HOME}/.aspire/bin/aspire"
 

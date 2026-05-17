@@ -12,3 +12,8 @@ obj/
 *.tmp
 CoverageReport/
 .aspire/
+
+# Local credentials and machine-specific settings.
+.env
+.env.*
+!.env.example

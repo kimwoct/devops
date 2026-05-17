@@ -54,6 +54,7 @@ kind get clusters
 ## Public demo flow
 
 - Use ngrok only in front of the active weather Nginx port-forward.
+- Keep ngrok tokens and public-demo passwords in `.env.local`; never write real credentials into markdown, Git commits, or shell-history examples.
 - Correct local targets:
   - `http://127.0.0.1:5035` when the Kubernetes weather port-forward owns `5035`
   - `http://127.0.0.1:5037` when Aspire DCP owns `5035` and the Kubernetes fallback port is used
@@ -68,7 +69,7 @@ curl -i http://127.0.0.1:5037/weather/local
 - Start ngrok against the working local port:
 
 ```sh
-ngrok http http://127.0.0.1:5037
+NGROK_LOCAL_URL=http://127.0.0.1:5037 ./scripts/start-ngrok-demo.sh
 ```
 
 - Check ngrok's active target when troubleshooting:
@@ -112,5 +113,5 @@ curl -fsS http://127.0.0.1:4040/api/tunnels
 ```sh
 ./scripts/start-weather-service.sh
 kubectl apply -f k8s/linux-smoke.yaml
-REPO_URL="https://github.com/OWNER/REPO.git" ./scripts/install-argocd.sh
+./scripts/install-argocd.sh
 ```

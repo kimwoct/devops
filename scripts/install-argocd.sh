@@ -1,12 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+source "${ROOT_DIR}/scripts/load-env.sh"
+load_project_env "${ROOT_DIR}"
+
 CLUSTER_NAME="${CLUSTER_NAME:-devops-lite}"
 KIND_CONTEXT="kind-${CLUSTER_NAME}"
 ARGOCD_NAMESPACE="${ARGOCD_NAMESPACE:-argocd}"
 ARGOCD_VERSION="${ARGOCD_VERSION:-v2.13.3}"
 REPO_URL="${REPO_URL:-}"
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 require_command() {
   if ! command -v "$1" >/dev/null 2>&1; then

@@ -589,12 +589,12 @@ brew install ngrok
 Add your ngrok authtoken from the ngrok dashboard:
 
 ```sh
-export NGROK_AUTHTOKEN="<paste-token-here>"
-ngrok config add-authtoken "$NGROK_AUTHTOKEN"
-unset NGROK_AUTHTOKEN
+cp .env.example .env.local
+$EDITOR .env.local
+./scripts/configure-ngrok.sh
 ```
 
-Do not paste a real ngrok token into markdown, Git commits, shell history snippets, screenshots, or chat. If a token is exposed, revoke or rotate it in the ngrok dashboard before using ngrok again.
+Put the real token only in `.env.local` as `NGROK_AUTHTOKEN=...`. Do not paste a real ngrok token into markdown, Git commits, shell history snippets, screenshots, or chat. If a token is exposed, revoke or rotate it in the ngrok dashboard before using ngrok again.
 
 Verify:
 
@@ -671,19 +671,19 @@ If `curl http://127.0.0.1:80/weather/local` returns `404` from `Apache`, ngrok i
 For a quick demo on port `5035`:
 
 ```sh
-ngrok http http://127.0.0.1:5035
+NGROK_LOCAL_URL=http://127.0.0.1:5035 ./scripts/start-ngrok-demo.sh
 ```
 
 For the Aspire-safe fallback port:
 
 ```sh
-ngrok http http://127.0.0.1:5037
+NGROK_LOCAL_URL=http://127.0.0.1:5037 ./scripts/start-ngrok-demo.sh
 ```
 
 This is the verified command when `5035` is owned by Aspire DCP:
 
 ```sh
-ngrok http http://127.0.0.1:5037
+NGROK_LOCAL_URL=http://127.0.0.1:5037 ./scripts/start-ngrok-demo.sh
 ```
 
 Do not use this for the weather demo:
@@ -697,7 +697,9 @@ On this Mac, `ngrok http 80` exposed local Apache. It made `/` return `200 OK`, 
 If you prefer to choose the public URL and your ngrok account supports it:
 
 ```sh
-ngrok http 5035 --url https://weather-demo.example.ngrok.app
+NGROK_LOCAL_URL=http://127.0.0.1:5035 \
+NGROK_URL=https://weather-demo.example.ngrok.app \
+  ./scripts/start-ngrok-demo.sh
 ```
 
 Use the same pattern with `5037` if Aspire owns `5035`.
@@ -753,50 +755,39 @@ http://localhost:80
 
 #### 4. Safer Demo With Basic Auth
 
-A public ngrok URL is reachable from the internet. For anything beyond a quick screen-share demo, add basic auth with a Traffic Policy file.
-
-Create a temporary policy:
+A public ngrok URL is reachable from the internet. For anything beyond a quick screen-share demo, enable basic auth through `.env.local`:
 
 ```sh
-cat > /tmp/weather-ngrok-basic-auth.yml <<'EOF'
-on_http_request:
-  - actions:
-      - type: basic-auth
-        config:
-          credentials:
-            - demo:change-this-password
-EOF
+NGROK_BASIC_AUTH_ENABLED=true
+NGROK_BASIC_AUTH_USER=demo
+NGROK_BASIC_AUTH_PASSWORD=<choose-a-password>
 ```
 
-Start ngrok with the policy:
+Start ngrok through the helper. The helper creates a temporary Traffic Policy file from local env values and deletes it when ngrok exits.
 
 ```sh
-ngrok http http://127.0.0.1:5035 \
-  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+NGROK_LOCAL_URL=http://127.0.0.1:5035 ./scripts/start-ngrok-demo.sh
 ```
 
 Use `5037` if the Kubernetes stack is running on the fallback port:
 
 ```sh
-ngrok http http://127.0.0.1:5037 \
-  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+NGROK_LOCAL_URL=http://127.0.0.1:5037 ./scripts/start-ngrok-demo.sh
 ```
 
 Demo login:
 
 ```text
 username: demo
-password: change-this-password
+password: value from NGROK_BASIC_AUTH_PASSWORD in .env.local
 ```
-
-Change the password before sharing the URL.
 
 If your plan supports a fixed public URL, combine it with the policy:
 
 ```sh
-ngrok http 5035 \
-  --url https://weather-demo.example.ngrok.app \
-  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+NGROK_LOCAL_URL=http://127.0.0.1:5035 \
+NGROK_URL=https://weather-demo.example.ngrok.app \
+  ./scripts/start-ngrok-demo.sh
 ```
 
 #### 5. Observe Demo Traffic
@@ -842,11 +833,7 @@ Stop the Kubernetes weather stack:
 ./scripts/stop-weather-service.sh
 ```
 
-Clean the temporary auth file:
-
-```sh
-rm -f /tmp/weather-ngrok-basic-auth.yml
-```
+The ngrok helper removes its temporary auth policy automatically.
 
 #### 7. Public Demo Rules
 

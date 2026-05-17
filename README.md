@@ -591,6 +591,19 @@ LOCAL_PORT=5037 ./scripts/start-weather-service.sh
 
 Use ngrok to expose only the weather Nginx port-forward for a short public demo. Do not point ngrok at local port `80`; on this Mac that can expose Apache instead of the weather service.
 
+Keep credentials in a local env file that is ignored by Git:
+
+```sh
+cp .env.example .env.local
+$EDITOR .env.local
+```
+
+Set `NGROK_AUTHTOKEN` only in `.env.local`, then save it into the local ngrok config:
+
+```sh
+./scripts/configure-ngrok.sh
+```
+
 Start or confirm the Kubernetes weather port:
 
 ```sh
@@ -608,13 +621,13 @@ curl -i http://127.0.0.1:5037/weather/local
 Expose the working local port:
 
 ```sh
-ngrok http http://127.0.0.1:5035
+NGROK_LOCAL_URL=http://127.0.0.1:5035 ./scripts/start-ngrok-demo.sh
 ```
 
 Or, for the fallback port:
 
 ```sh
-ngrok http http://127.0.0.1:5037
+NGROK_LOCAL_URL=http://127.0.0.1:5037 ./scripts/start-ngrok-demo.sh
 ```
 
 Then test the public URL:
@@ -776,7 +789,9 @@ This repo uses GitHub Actions for CI and Argo CD for Kubernetes delivery.
 ### Install Argo CD Locally
 
 ```sh
-REPO_URL="https://github.com/OWNER/REPO.git" ./scripts/install-argocd.sh
+cp .env.example .env.local
+$EDITOR .env.local
+./scripts/install-argocd.sh
 kubectl -n argocd port-forward svc/argocd-server 8080:443
 ```
 
