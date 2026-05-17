@@ -531,6 +531,329 @@ The stop script handles:
 
 Stop Aspire with `Ctrl+C` in the terminal running `./scripts/run-aspire.sh`.
 
+### Public Demo With ngrok
+
+Use ngrok only for a short public demo of the weather UI/API. Keep Kubernetes private and expose only the local Nginx port-forward.
+
+```text
+Public browser
+  |
+  v
+ngrok HTTPS URL
+  |
+  v
+127.0.0.1:5035 or 127.0.0.1:5037
+  |
+  v
+kubectl port-forward
+  |
+  v
+svc/weather-nginx
+  |
+  v
+svc/weather-live-stream
+```
+
+Do not expose these services with ngrok for a casual demo:
+
+- Prometheus
+- Grafana
+- Argo CD
+- Redis
+- Redpanda
+- Kubernetes API server
+- OpenTelemetry Collector OTLP ports
+
+What ngrok is for:
+
+- sharing a temporary HTTPS URL with a reviewer
+- demoing the dashboard and `/weather/local` endpoint
+- testing an external webhook callback against a local service
+- avoiding router port-forward rules on your home network
+
+What ngrok is not for:
+
+- production ingress
+- long-lived public hosting
+- exposing cluster admin tools
+- exposing observability backends to the internet
+
+#### 1. Install And Authenticate ngrok
+
+Install the ngrok agent on macOS:
+
+```sh
+brew install ngrok
+```
+
+Add your ngrok authtoken from the ngrok dashboard:
+
+```sh
+ngrok config add-authtoken "<YOUR_AUTHTOKEN>"
+```
+
+Verify:
+
+```sh
+ngrok version
+ngrok config check
+```
+
+Official ngrok CLI patterns used here:
+
+- `ngrok config add-authtoken` saves the token in the ngrok config file.
+- `ngrok http 8080` forwards a local HTTP service.
+- `ngrok http 8080 --traffic-policy-file tp.yml` adds auth or routing policy.
+- `ngrok http 8080 --url https://example.ngrok.app` chooses the public URL when your plan supports it.
+
+Official references:
+
+- ngrok macOS install: <https://ngrok.com/downloads/mac-os>
+- ngrok agent CLI: <https://ngrok.com/docs/agent/cli>
+
+#### 2. Start The Weather Stack Locally
+
+```sh
+cd /Users/kingwong/Downloads/devops
+./scripts/start-weather-service.sh
+```
+
+The normal local URL is:
+
+```text
+http://127.0.0.1:5035/
+```
+
+If Aspire owns `5035`, the script falls back to:
+
+```text
+http://127.0.0.1:5037/
+```
+
+Find the active port:
+
+```sh
+lsof -nP -iTCP:5035 -sTCP:LISTEN || true
+lsof -nP -iTCP:5037 -sTCP:LISTEN || true
+```
+
+Test local access before making it public:
+
+```sh
+curl -i http://127.0.0.1:5035/
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+Use `5037` in those URLs if the start script selected the fallback port.
+
+Known working fallback from local troubleshooting:
+
+```sh
+kubectl --context kind-devops-lite port-forward svc/weather-nginx 5037:80 --address 127.0.0.1
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+Expected API result:
+
+```text
+HTTP/1.1 200 OK
+content-type: application/json
+```
+
+If `curl http://127.0.0.1:80/weather/local` returns `404` from `Apache`, ngrok is pointing at the wrong local service. Local port `80` is not the weather service on this Mac.
+
+#### 3. Start A Public ngrok Tunnel
+
+For a quick demo on port `5035`:
+
+```sh
+ngrok http http://127.0.0.1:5035
+```
+
+For the Aspire-safe fallback port:
+
+```sh
+ngrok http http://127.0.0.1:5037
+```
+
+This is the verified command when `5035` is owned by Aspire DCP:
+
+```sh
+ngrok http http://127.0.0.1:5037
+```
+
+Do not use this for the weather demo:
+
+```sh
+ngrok http 80
+```
+
+On this Mac, `ngrok http 80` exposed local Apache. It made `/` return `200 OK`, but `/weather/local` returned `404` because Apache does not know the weather API route.
+
+If you prefer to choose the public URL and your ngrok account supports it:
+
+```sh
+ngrok http 5035 --url https://weather-demo.example.ngrok.app
+```
+
+Use the same pattern with `5037` if Aspire owns `5035`.
+
+ngrok prints a public HTTPS URL like:
+
+```text
+https://random-name.ngrok-free.app
+```
+
+Share only that HTTPS URL for the demo.
+
+Demo URLs:
+
+```text
+https://random-name.ngrok-free.app/
+https://random-name.ngrok-free.app/weather/local
+```
+
+Verify the public weather API:
+
+```sh
+curl -i https://random-name.ngrok-free.app/weather/local
+```
+
+Expected public API result:
+
+```text
+HTTP/2 200
+content-type: application/json
+```
+
+ngrok also provides a traffic inspector in the dashboard. Use it to see incoming request paths and status codes during the demo without changing the app.
+
+If `/` works but `/weather/local` does not, check what ngrok is forwarding to:
+
+```sh
+curl -fsS http://127.0.0.1:4040/api/tunnels
+```
+
+Good target:
+
+```text
+http://127.0.0.1:5035
+http://127.0.0.1:5037
+```
+
+Wrong target for this app:
+
+```text
+http://localhost:80
+```
+
+#### 4. Safer Demo With Basic Auth
+
+A public ngrok URL is reachable from the internet. For anything beyond a quick screen-share demo, add basic auth with a Traffic Policy file.
+
+Create a temporary policy:
+
+```sh
+cat > /tmp/weather-ngrok-basic-auth.yml <<'EOF'
+on_http_request:
+  - actions:
+      - type: basic-auth
+        config:
+          credentials:
+            - demo:change-this-password
+EOF
+```
+
+Start ngrok with the policy:
+
+```sh
+ngrok http http://127.0.0.1:5035 \
+  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+```
+
+Use `5037` if the Kubernetes stack is running on the fallback port:
+
+```sh
+ngrok http http://127.0.0.1:5037 \
+  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+```
+
+Demo login:
+
+```text
+username: demo
+password: change-this-password
+```
+
+Change the password before sharing the URL.
+
+If your plan supports a fixed public URL, combine it with the policy:
+
+```sh
+ngrok http 5035 \
+  --url https://weather-demo.example.ngrok.app \
+  --traffic-policy-file /tmp/weather-ngrok-basic-auth.yml
+```
+
+#### 5. Observe Demo Traffic
+
+While the public demo is running, watch Kubernetes logs:
+
+```sh
+kubectl --context kind-devops-lite logs deploy/weather-live-stream -f
+```
+
+Watch Nginx logs:
+
+```sh
+kubectl --context kind-devops-lite logs deploy/weather-nginx -f
+```
+
+Watch OpenTelemetry trace batches:
+
+```sh
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector -f
+```
+
+Generate a public request:
+
+```sh
+curl -i https://random-name.ngrok-free.app/weather/local
+```
+
+Then check trace output:
+
+```sh
+kubectl --context kind-devops-lite logs -n observability deploy/otel-collector --tail=200 \
+  | grep -Ei "traces|span|status|weather-live-stream"
+```
+
+#### 6. Stop The Public Demo
+
+Stop ngrok with `Ctrl+C` in the terminal running `ngrok http`.
+
+Stop the Kubernetes weather stack:
+
+```sh
+./scripts/stop-weather-service.sh
+```
+
+Clean the temporary auth file:
+
+```sh
+rm -f /tmp/weather-ngrok-basic-auth.yml
+```
+
+#### 7. Public Demo Rules
+
+- Use ngrok for short demos, webhook testing, or stakeholder review.
+- Do not put secrets, admin dashboards, or production data behind a random public URL.
+- Prefer basic auth or OAuth when anyone outside your machine can access the URL.
+- Keep the app behind Nginx; do not expose the app pod directly unless debugging.
+- Stop ngrok when the demo is over.
+- For real production access, use managed Kubernetes ingress, DNS, TLS, WAF/rate limits, observability, and authentication instead of ngrok.
+- If you need a stable team-facing demo endpoint, use cloud ingress or a managed environment rather than ngrok.
+
 ### Why Not Let GitHub Actions Deploy Directly To OrbStack
 
 - GitHub-hosted runners cannot reach the kind cluster running on this Mac.

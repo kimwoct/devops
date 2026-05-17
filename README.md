@@ -587,6 +587,64 @@ If Aspire is running and you still need the Kubernetes stack, use either the aut
 LOCAL_PORT=5037 ./scripts/start-weather-service.sh
 ```
 
+### Public Demo With ngrok
+
+Use ngrok to expose only the weather Nginx port-forward for a short public demo. Do not point ngrok at local port `80`; on this Mac that can expose Apache instead of the weather service.
+
+Start or confirm the Kubernetes weather port:
+
+```sh
+./scripts/start-weather-service.sh
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+If Aspire owns `5035`, use the verified fallback:
+
+```sh
+kubectl --context kind-devops-lite port-forward svc/weather-nginx 5037:80 --address 127.0.0.1
+curl -i http://127.0.0.1:5037/weather/local
+```
+
+Expose the working local port:
+
+```sh
+ngrok http http://127.0.0.1:5035
+```
+
+Or, for the fallback port:
+
+```sh
+ngrok http http://127.0.0.1:5037
+```
+
+Then test the public URL:
+
+```sh
+curl -i https://YOUR-NGROK-URL.ngrok-free.dev/weather/local
+```
+
+Troubleshooting:
+
+```sh
+curl -fsS http://127.0.0.1:4040/api/tunnels
+lsof -nP -iTCP:80 -sTCP:LISTEN || true
+lsof -nP -iTCP:5035 -sTCP:LISTEN || true
+lsof -nP -iTCP:5037 -sTCP:LISTEN || true
+```
+
+Correct ngrok target:
+
+```text
+http://127.0.0.1:5035
+http://127.0.0.1:5037
+```
+
+Wrong target for the weather demo:
+
+```text
+http://localhost:80
+```
+
 ## 9. Stop and Start
 
 Stop local workload pods without deleting the cluster:
