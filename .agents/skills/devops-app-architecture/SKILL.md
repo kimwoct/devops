@@ -23,6 +23,7 @@ Use this skill when the work needs to fit the repo's local development architect
 - Wiring a service behind Nginx and `kubectl port-forward`
 - Adding CI in GitHub Actions and CD through Argo CD
 - Creating a tiny smoke pod for Linux/container verification
+- Adding endpoint-focused k6 performance smoke tests
 
 ## First check
 
@@ -48,6 +49,7 @@ kind get clusters
    - `./scripts/start-weather-service.sh` for the weather service
    - `./scripts/smoke-linux.sh` for the tiny Linux pod
    - `./scripts/run-aspire.sh` for Aspire
+   - `./scripts/run-k6-weather.sh` for a small weather API throughput check
 3. Verify with `kubectl get pods`, `kubectl get svc`, and `curl`.
 4. Stop with the matching script.
 
@@ -100,6 +102,7 @@ curl -fsS http://127.0.0.1:4040/api/tunnels
 - Prefer `busybox` or `alpine` for tiny smoke or proxy containers.
 - Prefer one service per manifest file or per logical bundle.
 - Prefer `screen`-backed port-forward scripts for long-running local access.
+- Prefer small k6 checks locally; keep heavy load tests manual.
 
 ## Do not do this without explicit approval
 

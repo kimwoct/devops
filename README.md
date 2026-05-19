@@ -96,6 +96,12 @@ brew install --cask orbstack
 brew install docker kubectl kind helm
 ```
 
+Optional performance test CLI:
+
+```sh
+brew install k6
+```
+
 Start OrbStack from the command line:
 
 ```sh
@@ -753,7 +759,62 @@ Stop OrbStack when you are not using containers:
 orb stop
 ```
 
-## 10. Uninstall Workloads
+## 10. Lightweight Throughput Testing With k6
+
+Use k6 for small endpoint-focused throughput checks on the same Nginx/API path used by the weather service.
+
+Start the stack first:
+
+```sh
+./scripts/start-weather-service.sh
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+Run the default smoke profile:
+
+```sh
+./scripts/run-k6-weather.sh
+```
+
+The helper uses:
+
+```text
+BASE_URL=http://127.0.0.1:5035
+VUS=20
+DURATION=1m
+```
+
+Use the fallback port if Aspire owns `5035`:
+
+```sh
+BASE_URL=http://127.0.0.1:5037 ./scripts/run-k6-weather.sh
+```
+
+Tune the test lightly when you need a faster regression signal:
+
+```sh
+VUS=10 DURATION=30s ./scripts/run-k6-weather.sh
+```
+
+The test script is [tests/performance/weather-local.js](/Users/kingwong/Downloads/devops/tests/performance/weather-local.js).
+
+It checks:
+
+- `http_req_failed` stays below `1%`
+- `http_req_duration` p95 stays below `500 ms`
+- `/weather/local` returns `200`
+- the body looks like the expected weather payload
+
+Use the right tool for the job:
+
+- k6: throughput, latency, error rate
+- Playwright: browser flows
+- Prometheus/Grafana: ongoing service metrics
+- Locust: more complex user behavior if you need it later
+
+Keep heavy load tests manual. If k6 ever enters CI, keep it tiny and explicit so it stays a regression check, not a fake capacity claim.
+
+## 11. Uninstall Workloads
 
 Remove Helm releases:
 
@@ -790,7 +851,7 @@ df -h /
 du -sh ~/.orbstack ~/.docker 2>/dev/null || true
 ```
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 If `docker version` fails:
 
@@ -827,7 +888,7 @@ rm -rf ~/Library/Caches/Homebrew/*
 df -h /
 ```
 
-## 12. CI/CD With GitHub Actions And Argo CD
+## 13. CI/CD With GitHub Actions And Argo CD
 
 This repo uses GitHub Actions for CI and Argo CD for Kubernetes delivery.
 
@@ -922,7 +983,7 @@ This proves the intended split: GitHub Actions builds the image, Git stores the 
 - GitOps manifests: `gitops/`
 - CI/CD map: `docs/orbstack-kind-map.md`
 
-## 13. Terraform Usage
+## 14. Terraform Usage
 
 Terraform is not required for the local OrbStack + kind stack. Keep local kind disposable and script-driven so it stays lightweight on this low-disk Mac.
 
@@ -958,7 +1019,7 @@ infra/
 
 Do not commit Terraform state or real variable files. This repo ignores `.terraform/`, `*.tfstate`, and `*.tfvars`; commit only examples such as `terraform.tfvars.example`.
 
-## 14. Security Checklist
+## 15. Security Checklist
 
 Run this before sharing the repo, opening a public ngrok demo, or committing infrastructure changes.
 
@@ -979,7 +1040,7 @@ Rules:
 - If an ngrok token leaks, revoke or rotate it in the ngrok dashboard, update `.env.local`, then run `./scripts/configure-ngrok.sh`.
 - Do not expose Prometheus, Grafana, Argo CD, Redis, Redpanda, Kubernetes API, or OpenTelemetry collector ports through ngrok for a casual demo.
 
-## 15. Smallest Linux Pod Example
+## 16. Smallest Linux Pod Example
 
 If you want the smallest practical Linux container in this stack, use the BusyBox smoke pod:
 

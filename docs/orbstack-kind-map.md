@@ -181,7 +181,28 @@ Practical production patterns:
 - Use OpenTelemetry traces to follow one request across services.
 - Use Prometheus metrics to track latency, errors, saturation, and throughput.
 - Use rolling deployments and quick rollback for safer releases.
+
 In this repo, `linux-smoke` is the smallest container example. It uses `busybox:1.36`, runs a tiny HTTP server, and proves the minimum pod/service path without a custom image.
+
+Use `k6` when you need a small throughput check against the running weather API:
+
+```text
+k6
+  |
+  v
+http://127.0.0.1:5035/weather/local
+  |
+  v
+kubectl port-forward
+  |
+  v
+weather-nginx -> weather-live-stream
+```
+
+- k6 answers: request rate, p95/p99 latency, and error rate.
+- Prometheus answers: what the app and cluster emitted over time.
+- OpenTelemetry answers: what happened inside one request.
+- Playwright answers: whether a browser user flow works.
 
 ## Practical Data Usage: Handling 1M DB Queries
 
@@ -656,6 +677,63 @@ The stop script handles:
 - `otel-collector`
 
 Stop Aspire with `Ctrl+C` in the terminal running `./scripts/run-aspire.sh`.
+
+### Lightweight k6 Throughput Runbook
+
+Use this when you want a local API throughput signal before or after a code or Kubernetes manifest change.
+
+#### 1. Install k6
+
+```sh
+brew install k6
+k6 version
+```
+
+#### 2. Start The Weather API
+
+```sh
+cd /Users/kingwong/Downloads/devops
+./scripts/start-weather-service.sh
+curl -i http://127.0.0.1:5035/weather/local
+```
+
+Use `5037` if Aspire owns `5035`.
+
+#### 3. Run A Small Test
+
+```sh
+./scripts/run-k6-weather.sh
+```
+
+Fallback port:
+
+```sh
+BASE_URL=http://127.0.0.1:5037 ./scripts/run-k6-weather.sh
+```
+
+Smaller smoke profile:
+
+```sh
+VUS=5 DURATION=20s ./scripts/run-k6-weather.sh
+```
+
+#### 4. Read The Result
+
+Important k6 fields:
+
+- `http_req_failed`: should stay below `1%`.
+- `http_req_duration`: inspect p95 and p99 latency.
+- `checks`: should pass for status and payload shape.
+- `http_reqs`: total request count.
+
+If k6 fails:
+
+- Check the app endpoint with `curl`.
+- Check `kubectl get pods` and `kubectl logs deploy/weather-live-stream`.
+- Check Nginx logs with `kubectl logs deploy/weather-nginx`.
+- Lower `VUS` if the Mac is under disk, CPU, or memory pressure.
+
+Keep heavy load tests manual. Local OrbStack + kind is useful for regression checks, not for proving production capacity.
 
 ### Public Demo With ngrok
 
